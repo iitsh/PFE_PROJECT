@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Response, Request
+from fastapi import APIRouter, HTTPException, Response, Request, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from database import get_db
 from models import RegisterData, LoginData, RefreshToken
@@ -23,6 +24,36 @@ JWT_ISSUER = os.getenv("JWT_ISSUER", "backend")
 JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "pfe_frontend")
 JWT_DURATION_MINUTES = int(os.getenv("JWT_DURATION_IN_MINUTES", 1))
 JWT_REFRESH_DURATION_MINUTES = int(os.getenv("JWT_REFRESH_TOKEN_DURATION_IN_MINUTES", 3))
+
+
+bearer_scheme = HTTPBearer()
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# DÉPENDANCE : VÉRIFICATION DU JWT
+# ═════════════════════════════════════════════════════════════════════════════
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    """
+    Dépendance FastAPI injectée dans les routes protégées.
+    Lit le header :  Authorization: Bearer <access_token>
+    Vérifie la signature, l'expiration, l'issuer et l'audience.
+    Retourne le payload du JWT si tout est valide.
+    """
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(
+            token,
+            JWT_KEY,
+            algorithms=[JWT_ALGORITHM],
+            issuer=JWT_ISSUER,
+            audience=JWT_AUDIENCE,
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Access token expiré")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Access token invalide")
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -335,6 +366,31 @@ def logout(request: Request, response: Response):
         cur.close()
         conn.close()
 
-    response.delete_cookie(key="refreshToken", path="/")
 
-    return {"message": "Déconnexion réussie"}
+
+# ── Route Me (protégée) ──────────────────────────────────────────────────────
+@router.get("/me")
+def me(payload: dict = Depends(get_current_user)):
+    """
+    Route protégée : retourne les infos de l'utilisateur connecté.
+    Le frontend doit envoyer :  Authorization: Bearer <access_token>
+    Si le token est absent, expiré ou invalide → 401 automatique.
+    """
+    email = payload.get("sub")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, nom, prenom, email FROM users WHERE email = %s", (email,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    return {
+        "id":     user[0],
+        "nom":    user[1],
+        "prenom": user[2],
+        "email":  user[3],
+    }
