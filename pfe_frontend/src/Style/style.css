@@ -1,0 +1,215 @@
+/* Global page wrapper pour Connexion et Inscription */
+.auth-page-wrapper, .auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #eff6ff, #f0f9ff, #f5f3ff);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Main card styling (maquette.html style) */
+.auth-card, .auth-scroll-content {
+    background-color: #ffffff;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+/* Header section */
+.auth-header, .auth-header-container {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.auth-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+    font-weight: 800;
+    color: #1e40af;
+}
+
+/* Titres en noir / bleu tres fonce (#1e293b) */
+.auth-header h1, .auth-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b; 
+    margin: 0 0 8px 0;
+}
+
+/* Sous-titres en gris ardoise */
+.auth-header p, .auth-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Form layout */
+.auth-form-container, .auth-scroll-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-row, .auth-row-container {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+
+.auth-input-group, .auth-champ-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.auth-input-group.half, .half-width {
+    width: 50%;
+}
+
+/* Labels */
+.auth-input-group label, .auth-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569; /* Gris fonce elegant */
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* Inputs */
+.auth-input-group input, .auth-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #334155; /* Texte gris fonce/noir */
+    background: #ffffff;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+/* Placeholder gris clair comme demande */
+.auth-input-group input::placeholder, .auth-input::placeholder {
+    color: #94a3b8; /* Gris clair */
+}
+
+/* Focus inputs */
+.auth-input-group input:focus, .auth-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+/* Erreurs */
+.auth-input-group input.input-error, .auth-input-erreur {
+    border-color: #ef4444 !important;
+}
+
+.auth-input-group input.input-error:focus, .auth-input-erreur:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.error-message, .auth-texte-erreur {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* Submit button (maquette.html gradient) */
+.auth-submit-btn, .auth-bouton {
+    width: 100%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-submit-btn:hover, .auth-bouton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Footer et Liens */
+.auth-footer {
+    text-align: center;
+    font-size: 14px;
+    color: #64748b;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Alerte d'erreur en haut du formulaire */
+.auth-alert-error {
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.auth-footer-text {
+    margin-bottom: 8px;
+    color: #64748b;
+}
+
+.auth-link, .auth-link-bouton {
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 0;
+}
+
+.auth-link:hover, .auth-link-bouton:hover {
+    text-decoration: underline;
+    color: #1d4ed8;
+}
+
+/* Marge pour le bouton Inscription */
+.mt-4 {
+    margin-top: 16px;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .auth-row, .auth-row-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .auth-input-group.half, .half-width {
+        width: 100%;
+    }
+    
+    .auth-card, .auth-scroll-content {
+        padding: 30px 20px;
+    }
+}
