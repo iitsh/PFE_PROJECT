@@ -11,13 +11,13 @@ import os
 import secrets
 import hashlib
 
-# TZ_FR utilisé UNIQUEMENT pour les JWT
+# Heure de Paris pour les JWT
 TZ_FR = ZoneInfo("Europe/Paris")
 
 router = APIRouter()
 pwd = CryptContext(schemes=["bcrypt"])
 
-# ── Configuration JWT (depuis .env) ─────────────────────────────────────────
+# ---- Configuration JWT (depuis .env) ----
 JWT_KEY = os.getenv("JWT_KEY")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ISSUER = os.getenv("JWT_ISSUER", "backend")
@@ -25,13 +25,12 @@ JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "pfe_frontend")
 JWT_DURATION_MINUTES = int(os.getenv("JWT_DURATION_IN_MINUTES", 1))
 JWT_REFRESH_DURATION_MINUTES = int(os.getenv("JWT_REFRESH_TOKEN_DURATION_IN_MINUTES", 3))
 
-
 bearer_scheme = HTTPBearer()
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# DÉPENDANCE : VÉRIFICATION DU JWT
-# ═════════════════════════════════════════════════════════════════════════════
+# -------------------------------------------------------------
+# Dépendance : vérification du JWT
+# -------------------------------------------------------------
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """
@@ -56,9 +55,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
         raise HTTPException(status_code=401, detail="Access token invalide")
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# VALIDATION MOT DE PASSE
-# ═════════════════════════════════════════════════════════════════════════════
+# -------------------------------------------------------------
+# Validations inscription
+# -------------------------------------------------------------
 
 def valider_mot_de_passe(mdp: str):
     """Vérifie que le mot de passe respecte les règles de sécurité"""
@@ -70,16 +69,58 @@ def valider_mot_de_passe(mdp: str):
     if not re.search(r'\d', mdp):                       erreurs.append("un chiffre")
     if not re.search(r'[!@#$%^&*(),.?":{}|<>]', mdp):  erreurs.append("un caractère spécial")
     if erreurs:
-        raise HTTPException(status_code=422, detail="Critères requis : " + ", ".join(erreurs))
+        raise HTTPException(status_code=422, detail="Mot de passe invalide — Critères requis : " + ", ".join(erreurs))
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# SERVICES JWT
-# ═════════════════════════════════════════════════════════════════════════════
+def valider_inscription(data: RegisterData):
+    """
+    Valide les champs de l'inscription côté backend.
+    Lève une 422 au premier champ invalide.
+    """
+    # Nom
+    if not data.nom.strip():
+        raise HTTPException(status_code=422, detail="Le nom est obligatoire")
+    if re.search(r'\d', data.nom):
+        raise HTTPException(status_code=422, detail="Le nom ne doit pas contenir de chiffres")
+    if len(data.nom.strip()) < 2 or len(data.nom.strip()) > 50:
+        raise HTTPException(status_code=422, detail="Le nom doit contenir entre 2 et 50 caractères")
+
+    # Prénom
+    if not data.prenom.strip():
+        raise HTTPException(status_code=422, detail="Le prénom est obligatoire")
+    if re.search(r'\d', data.prenom):
+        raise HTTPException(status_code=422, detail="Le prénom ne doit pas contenir de chiffres")
+    if len(data.prenom.strip()) < 2 or len(data.prenom.strip()) > 50:
+        raise HTTPException(status_code=422, detail="Le prénom doit contenir entre 2 et 50 caractères")
+
+    # Email
+    if not data.email.strip():
+        raise HTTPException(status_code=422, detail="L'email est obligatoire")
+    email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    if not re.match(email_regex, data.email.strip()):
+        raise HTTPException(status_code=422, detail="Le format de l'email est invalide")
+
+    # Téléphone
+    if not data.numero.strip():
+        raise HTTPException(status_code=422, detail="Le numéro de téléphone est obligatoire")
+    if not re.fullmatch(r'\d+', data.numero.strip()):
+        raise HTTPException(status_code=422, detail="Le numéro doit contenir uniquement des chiffres")
+    if len(data.numero.strip()) != 10:
+        raise HTTPException(status_code=422, detail="Le numéro doit contenir exactement 10 chiffres")
+
+    # Mot de passe
+    if not data.motDePasse:
+        raise HTTPException(status_code=422, detail="Le mot de passe est obligatoire")
+    valider_mot_de_passe(data.motDePasse)
+
+
+# -------------------------------------------------------------
+# Services JWT (access + refresh)
+# -------------------------------------------------------------
 
 def generate_access_token(username: str) -> str:
     """Génère un JWT signé (Access Token)"""
-    now = datetime.now(TZ_FR)   # JWT → heure Paris
+    now = datetime.now(TZ_FR)   # heure de Paris
     claims = {
         "sub": username,
         "name": username,
@@ -94,7 +135,7 @@ def generate_access_token(username: str) -> str:
 
 
 def generate_refresh_token() -> tuple[str, str, datetime]:
-    """Génère un Refresh Token : retourne (valeur_brute, hash, expiration)"""
+    """Renvoie (valeur brute, hash, date expiration) pour le refresh token"""
     raw_token = secrets.token_urlsafe(64)
     hash_bytes = hashlib.sha256(raw_token.encode()).digest()
     token_hash = hash_bytes.hex()
@@ -103,7 +144,7 @@ def generate_refresh_token() -> tuple[str, str, datetime]:
 
 
 def generate_tokens(username: str) -> dict:
-    """Génère Access Token + Refresh Token"""
+    """Access + refresh token d'un coup"""
     access_token = generate_access_token(username)
     raw_refresh, hash_refresh, expiry = generate_refresh_token()
     return {
@@ -114,14 +155,15 @@ def generate_tokens(username: str) -> dict:
     }
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# ROUTES
-# ═════════════════════════════════════════════════════════════════════════════
+# -------------------------------------------------------------
+# Routes
+# -------------------------------------------------------------
 
-# ── Route Inscription ──────────────────────────────────────────────────────
+# ---- Inscription ----
 @router.post("/register")
 def register(data: RegisterData):
-    valider_mot_de_passe(data.motDePasse)
+    # Double validation (mêmes règles que le frontend)
+    valider_inscription(data)
 
     conn = get_db()
     cur = conn.cursor()
@@ -148,22 +190,21 @@ def register(data: RegisterData):
     }
 
 
-# ── Route Login ──────────────────────────────────────────────────────────────
+# ---- Connexion ----
 @router.post("/login")
 def login(data: LoginData, response: Response, request: Request):
     ip = request.client.host
 
-    # ⚠️  Pour tout ce qui touche à la BDD (loginattempts), on utilise
-    #     datetime.utcnow() — naïf UTC — car PostgreSQL stocke les TIMESTAMP
-    #     sans timezone en UTC. Mélanger avec l'heure Paris (UTC+2) casse
-    #     les comparaisons et fait croire que le blocage est expiré.
+    # Pour tout ce qui touche à loginattempts on utilise datetime.utcnow()
+    # (naïf UTC) parce que la base stocke les TIMESTAMP sans timezone en UTC.
+    # Si on mélange avec l'heure de Paris, les comparaisons sont faussées.
     now_utc = datetime.utcnow()
 
     conn = get_db()
     cur = conn.cursor()
 
     try:
-        # ── 1. Récupère la dernière ligne de tentatives pour cette IP ──────
+        # 1. Dernière ligne de tentatives pour cette IP
         cur.execute("""
             SELECT id, attemptcount, lockeduntil
             FROM loginattempts
@@ -173,11 +214,10 @@ def login(data: LoginData, response: Response, request: Request):
         """, (ip,))
         last_record = cur.fetchone()
 
-        # ── 2. Vérifie si l'IP est actuellement bloquée ───────────────────
+        # 2. Si l'IP est bloquée, on refuse
         if last_record:
             rec_id, count, locked_until = last_record
             if locked_until and locked_until > now_utc:
-                # Blocage encore actif → on refuse
                 temps_restant = int((locked_until - now_utc).total_seconds())
                 cur.close()
                 conn.close()
@@ -186,37 +226,34 @@ def login(data: LoginData, response: Response, request: Request):
                     detail=f"Trop de tentatives. Votre IP est bloquée. Réessayez dans {temps_restant} secondes."
                 )
 
-        # ── 3. Cherche l'utilisateur par email ────────────────────────────
+        # 3. Recherche de l'utilisateur par email
         cur.execute("SELECT id, mot_de_passe, nom, prenom FROM users WHERE email = %s", (data.email,))
         user = cur.fetchone()
 
-        # ── 4. Mauvais identifiants ────────────────────────────────────────
+        # 4. Mauvais identifiants
         if not user or not pwd.verify(data.motDePasse, user[1]):
 
-            # Détermine si on est dans une nouvelle session ou dans la session courante.
-            #
-            # NOUVELLE SESSION si :
-            #   - Aucun record (premier essai de cette IP)
-            #   - Le dernier record avait un lockeduntil (blocage terminé → repart à 0)
-            #     → dans ce cas lockeduntil est expiré, sinon on aurait bloqué au step 2
-            #
-            # SESSION EN COURS si :
-            #   - Le dernier record n'a pas de lockeduntil (1 ou 2 échecs en cours)
+            # On détermine si c'est une nouvelle session de tentatives
+            # Nouvelle session si :
+            #   - aucun enregistrement (première tentative de l'IP)
+            #   - le dernier enregistrement avait un lockeduntil (blocage terminé)
+            # Session en cours si :
+            #   - dernier enregistrement sans lockeduntil (1 ou 2 échecs déjà)
 
             if last_record is None:
                 nouvelle_session = True
             else:
                 rec_id, count, locked_until = last_record
-                # locked_until is None  → session active, on continue
-                # locked_until expiré   → blocage terminé, nouvelle session
+                # locked_until None => session active, on continue
+                # locked_until expiré => blocage fini, nouvelle session
                 nouvelle_session = (locked_until is not None)
 
-            # Calcule le nouveau compteur
+            # Nouveau compteur
             new_count = 1 if nouvelle_session else (last_record[1] + 1)
 
-            # Prépare le message et le verrouillage éventuel
+            # Message et éventuel verrouillage
             if new_count >= 3:
-                new_locked_until = now_utc + timedelta(minutes=1)   # UTC → cohérent avec la BDD
+                new_locked_until = now_utc + timedelta(minutes=1)   # UTC cohérent avec la base
                 message = "Trop d'échecs. Votre IP est bloquée pendant 1 minute."
                 status_code = 403
             else:
@@ -227,14 +264,13 @@ def login(data: LoginData, response: Response, request: Request):
                 status_code = 401
 
             if nouvelle_session:
-                # INSERT → nouvelle ligne dans l'historique
-                # (⚠️ nécessite que ip_adresse n'ait PAS de contrainte UNIQUE dans la BDD)
+                # Insertion d'une nouvelle ligne (ip_adresse n'a pas de contrainte UNIQUE)
                 cur.execute("""
                     INSERT INTO loginattempts (ip_adresse, attemptcount, lastattemptat, lockeduntil)
                     VALUES (%s, %s, %s, %s)
                 """, (ip, new_count, now_utc, new_locked_until))
             else:
-                # UPDATE → incrémente la ligne courante de la session
+                # Mise à jour de la ligne existante
                 cur.execute("""
                     UPDATE loginattempts
                     SET attemptcount = %s, lastattemptat = %s, lockeduntil = %s
@@ -246,8 +282,8 @@ def login(data: LoginData, response: Response, request: Request):
             conn.close()
             raise HTTPException(status_code=status_code, detail=message)
 
-        # ── 5. Succès ─────────────────────────────────────────────────────
-        # L'historique des blocages est conservé, on n'y touche pas.
+        # 5. Connexion réussie
+        # On garde l'historique des blocages, on ne le nettoie pas.
         user_id, _, nom, prenom = user
 
     except HTTPException:
@@ -259,7 +295,7 @@ def login(data: LoginData, response: Response, request: Request):
         print(f"ERREUR SQL LOGIN: {e}")
         raise HTTPException(status_code=500, detail=f"Erreur interne serveur: {str(e)}")
 
-    # ── Génère les tokens ──────────────────────────────────────────────────
+    # Génération des tokens
     tokens = generate_tokens(data.email)
 
     cur.execute(
@@ -288,7 +324,7 @@ def login(data: LoginData, response: Response, request: Request):
     }
 
 
-# ── Route Refresh ───────────────────────────────────────────────────────────
+# ---- Renouvellement du token ----
 @router.post("/refresh")
 def refresh(request: Request, response: Response):
     raw_token = request.cookies.get("refreshToken")
@@ -348,7 +384,7 @@ def refresh(request: Request, response: Response):
     return {"accessToken": tokens["access_token"]}
 
 
-# ── Route Logout ────────────────────────────────────────────────────────────
+# ---- Déconnexion ----
 @router.post("/logout")
 def logout(request: Request, response: Response):
     raw_token = request.cookies.get("refreshToken")
@@ -366,15 +402,18 @@ def logout(request: Request, response: Response):
         cur.close()
         conn.close()
 
+    response.delete_cookie(key="refreshToken", path="/")
+
+    return {"message": "Déconnexion réussie"}
 
 
-# ── Route Me (protégée) ──────────────────────────────────────────────────────
+# ---- Route protégée : /me ----
 @router.get("/me")
 def me(payload: dict = Depends(get_current_user)):
     """
-    Route protégée : retourne les infos de l'utilisateur connecté.
-    Le frontend doit envoyer :  Authorization: Bearer <access_token>
-    Si le token est absent, expiré ou invalide → 401 automatique.
+    Renvoie les infos de l'utilisateur connecté.
+    Attend un header : Authorization: Bearer <access_token>
+    Si absent, expiré ou invalide → 401.
     """
     email = payload.get("sub")
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import '../Style/style.css';
 
@@ -6,28 +6,10 @@ const API = "http://localhost:8000/api/auth";
 
 export const Dashboard = () => {
     const navigate = useNavigate();
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    // ── Appelle /me avec l'access token courant ──────────────────────────
-    const fetchMe = useCallback(async (token) => {
-        const response = await fetch(`${API}/me`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        return response;
-    }, []);
-
-    // ── Appelle /refresh pour obtenir un nouvel access token ─────────────
-    const tryRefresh = useCallback(async () => {
-        const response = await fetch(`${API}/refresh`, {
-            method: "POST",
-            credentials: "include"   // envoie le cookie refreshToken HttpOnly
-        });
-        if (!response.ok) return null;
-        const data = await response.json();
-        sessionStorage.setItem("accessToken", data.accessToken);
-        return data.accessToken;
-    }, []);
+    const [user, setUser]               = useState(null);
+    const [loading, setLoading]         = useState(true);
+    const [accessExpire, setAccessExpire] = useState(false); // access token expiré → cache les données
+    const [tempsRestant, setTempsRestant] = useState(0);     // secondes avant déconnexion
 
     // ── Logout ───────────────────────────────────────────────────────────
     const handleLogout = async () => {
@@ -42,30 +24,21 @@ export const Dashboard = () => {
         }
     };
 
-    // ── Chargement initial : vérifie le token, rafraîchit si besoin ─────
+    // ── Chargement initial ───────────────────────────────────────────────
     useEffect(() => {
         const init = async () => {
             const token = sessionStorage.getItem("accessToken");
             if (!token) { navigate('/connexion'); return; }
 
-            // 1. Essaie avec l'access token actuel
-            let res = await fetchMe(token);
-
-            // 2. Si expiré (401), tente un refresh automatique
-            if (res.status === 401) {
-                const newToken = await tryRefresh();
-                if (!newToken) {
-                    // Refresh token aussi expiré → retour login
-                    sessionStorage.removeItem("user");
-                    sessionStorage.removeItem("accessToken");
-                    navigate('/connexion');
-                    return;
-                }
-                // Réessaie avec le nouveau token
-                res = await fetchMe(newToken);
-            }
+            // Appelle /me UNE SEULE FOIS — pas de refresh automatique
+            const res = await fetch(`${API}/me`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
 
             if (!res.ok) {
+                // Token déjà invalide ou expiré dès l'arrivée → retour login
+                sessionStorage.removeItem("user");
+                sessionStorage.removeItem("accessToken");
                 navigate('/connexion');
                 return;
             }
@@ -77,8 +50,50 @@ export const Dashboard = () => {
         };
 
         init();
-    }, [navigate, fetchMe, tryRefresh]);
+    }, [navigate]);
 
+    // ── Minuterie : surveille l'expiration des tokens ────────────────────
+    useEffect(() => {
+        if (loading) return; // attend que les données soient chargées
+
+        const token = sessionStorage.getItem("accessToken");
+        if (!token) return;
+
+        // Décode le payload JWT (lecture seule, pas de vérification de signature)
+        // pour récupérer exp (access token) et calculer l'expiration du refresh token
+        let expAccess, expRefresh;
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            expAccess  = payload.exp * 1000;                   // ms — expiration access token (1 min)
+            expRefresh = expAccess + (2 * 60 * 1000);          // +2 min → 3 min total (refresh token)
+        } catch {
+            navigate('/connexion');
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const now = Date.now();
+
+            if (now >= expRefresh) {
+                // ── Refresh token expiré → déconnexion automatique ────────
+                clearInterval(interval);
+                sessionStorage.removeItem("user");
+                sessionStorage.removeItem("accessToken");
+                navigate('/connexion');
+
+            } else if (now >= expAccess) {
+                // ── Access token expiré → on cache les données ────────────
+                // (les données restent en mémoire mais ne sont plus affichées)
+                setAccessExpire(true);
+                const secondesRestantes = Math.ceil((expRefresh - now) / 1000);
+                setTempsRestant(secondesRestantes);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [loading, navigate]);
+
+    // ── Affichage ────────────────────────────────────────────────────────
 
     if (loading) {
         return (
@@ -91,28 +106,56 @@ export const Dashboard = () => {
     return (
         <div className="auth-container">
             <div className="auth-scroll-content">
+
                 <div className="auth-champ-container auth-header-container">
                     <h1 className="auth-title">Dashboard</h1>
-                    <h2 className="auth-subtitle">Bienvenue {user?.nom || 'Utilisateur'} !</h2>
+                    {!accessExpire && (
+                        <h2 className="auth-subtitle">Bienvenue {user?.nom || 'Utilisateur'} !</h2>
+                    )}
                 </div>
 
-                <div className="auth-champ-container">
-                    <h3>Vos informations</h3>
-                    <p><strong>ID :</strong> {user.id}</p>
-                    <p><strong>Nom :</strong> {user.nom}</p>
-                    <p><strong>Prénom :</strong> {user.prenom}</p>
-                    <p><strong>Email :</strong> {user.email}</p>
-                </div>
+                {/* ── Access token expiré : données cachées ── */}
+                {accessExpire ? (
+                    <div className="auth-alert-error" style={{ textAlign: 'center' }}>
+                        <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                            ⚠️ Votre session a expiré.
+                        </p>
+                        <p>
+                            Déconnexion automatique dans <strong>{tempsRestant}</strong> seconde{tempsRestant > 1 ? 's' : ''}.
+                        </p>
+                        <button
+                            className="auth-bouton"
+                            onClick={handleLogout}
+                            style={{ marginTop: '12px', backgroundColor: '#ef4444' }}
+                        >
+                            <span className="auth-texte-bouton">Se déconnecter maintenant</span>
+                        </button>
+                    </div>
 
-                <div className="auth-champ-container mt-4">
-                    <button
-                        className="auth-bouton"
-                        onClick={handleLogout}
-                        style={{ backgroundColor: '#ef4444' }}
-                    >
-                        Déconnexion
-                    </button>
-                </div>
+                ) : (
+                    /* ── Access token valide : données affichées ── */
+                    <div className="auth-champ-container">
+                        <h3>Vos informations</h3>
+                        <p><strong>ID :</strong> {user.id}</p>
+                        <p><strong>Nom :</strong> {user.nom}</p>
+                        <p><strong>Prénom :</strong> {user.prenom}</p>
+                        <p><strong>Email :</strong> {user.email}</p>
+                    </div>
+                )}
+
+                {/* ── Bouton déconnexion toujours visible ── */}
+                {!accessExpire && (
+                    <div className="auth-champ-container mt-4">
+                        <button
+                            className="auth-bouton"
+                            onClick={handleLogout}
+                            style={{ backgroundColor: '#ef4444' }}
+                        >
+                            <span className="auth-texte-bouton">Déconnexion</span>
+                        </button>
+                    </div>
+                )}
+
             </div>
         </div>
     );
