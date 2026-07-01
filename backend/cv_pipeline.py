@@ -26,15 +26,31 @@ load_dotenv()
 
 # ── Initialise les clients IA (plusieurs fournisseurs pour le fallback) ──────
 # OpenRouter : fournisseur compatible OpenAI, utilisé en dernier recours
-openrouter_client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
-)
-# Google Gemini : fournisseur principal (rapide et gratuit avec quota)
-if os.getenv("GOOGLE_API_KEY"):
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-# Groq : fournisseur secondaire (très rapide, modèles Llama/Gemma)
-groq_client = GroqClient(api_key=os.getenv("GROQ_API_KEY"))
+# ── Clients IA initialisés paresseusement (lazy) ─────────────────────────────
+# On ne crée pas les clients au moment de l'import (évite le crash en CI/test)
+# mais à la première utilisation réelle.
+_openrouter_client = None
+_groq_client = None
+
+def get_openrouter_client():
+    """Retourne le client OpenRouter, initialisé à la première utilisation."""
+    global _openrouter_client
+    if _openrouter_client is None:
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENROUTER_API_KEY non définie. Vérifiez votre fichier .env")
+        _openrouter_client = OpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
+    return _openrouter_client
+
+def get_groq_client():
+    """Retourne le client Groq, initialisé à la première utilisation."""
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY non définie. Vérifiez votre fichier .env")
+        _groq_client = GroqClient(api_key=api_key)
+    return _groq_client
 
 # ── Listes de modèles par fournisseur (ordre de priorité dans chaque liste) ──
 # Gemini : pro (plus fiable) → flash (bon équilibre) → flash-lite (rapide mais tronque)
@@ -82,7 +98,7 @@ def appeler_llm(system: str, user: str, max_tokens: int = 4000) -> str:
         for model_name in GROQ_MODELS:
             try:
                 # Appel via l'API compatible OpenAI
-                response = groq_client.chat.completions.create(
+                response = get_groq_client().chat.completions.create(
                     model=model_name,
                     messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
                     temperature=0.1, max_tokens=max_tokens,
@@ -98,7 +114,7 @@ def appeler_llm(system: str, user: str, max_tokens: int = 4000) -> str:
         for model in OPENROUTER_MODELS:
             try:
                 # Même API compatible OpenAI
-                response = openrouter_client.chat.completions.create(
+                response = get_openrouter_client().chat.completions.create(
                     model=model,
                     messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
                     temperature=0.1, max_tokens=max_tokens,
