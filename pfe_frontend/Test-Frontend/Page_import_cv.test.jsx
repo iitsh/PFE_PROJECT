@@ -46,8 +46,8 @@ describe('Page Nouveau CV', () => {
         await user.click(skipBtn);
 
         // On passe à l'étape 3 directement (skip → offre d'emploi)
-        // "Offre d'emploi" apparaît 2 fois : dans le Stepper + dans le titre de l'étape 3
-        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(2);
+        // "Offre d'emploi" apparaît 3 fois : Stepper + SectionTitle + label "Collez...l'offre d'emploi"
+        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(3);
     });
 
     it("permet d'importer un CV, vérifier les données (étape 2), analyser l'offre (étape 3) et générer (étape 4)", async () => {
@@ -79,11 +79,17 @@ describe('Page Nouveau CV', () => {
         expect(await screen.findByText(/Informations personnelles/i)).toBeInTheDocument();
 
         // --- Etape 2 -> 3 ---
+        // Mock pour PUT /api/cv/profil (appelé par validerProfil)
+        global.fetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ message: "Profil mis à jour avec succès" })
+        });
+
         const nextBtn = screen.getByRole('button', { name: /Valider le profil/i });
         await user.click(nextBtn);
 
-        // "Offre d'emploi" apparaît 2 fois : dans le Stepper + dans le titre de l'étape 3
-        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(2);
+        // "Offre d'emploi" apparaît 3 fois : Stepper + SectionTitle + label "Collez...l'offre d'emploi"
+        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(3);
 
         // --- Etape 3 : Analyse Offre ---
         await user.type(screen.getByPlaceholderText(/Collez ici le texte de l'offre/i), "Nous cherchons un dev React.");
