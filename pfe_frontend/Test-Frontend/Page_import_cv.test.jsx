@@ -1,13 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import Page_import_cv from '../src/Screen/Page_import_cv.jsx';
+import { Page_nouveau_cv } from '../src/Screen/Page_nouveau_cv.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mocker l'API globale fetch pour éviter les vrais appels réseau
 global.fetch = vi.fn();
 
-// Mock the useNavigate hook inside react-router-dom
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -17,249 +15,101 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-let setAccessTokenMock;
+global.URL.createObjectURL = vi.fn();
 
-beforeAll(() => {
-    // Configuration globale avant tous les tests
-})
+// Mock scrollIntoView (non disponible dans jsdom)
+Element.prototype.scrollIntoView = vi.fn();
 
 beforeEach(() => {
     vi.clearAllMocks();
-    setAccessTokenMock = vi.fn();
 })
-
 afterAll(() => {
     vi.restoreAllMocks();
 })
 
-describe('Page d\'import de CV', () => {
-    it('affiche la zone de dépôt au chargement', () => {
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
+describe('Page Nouveau CV', () => {
 
-        expect(screen.getByText(/Importez votre CV/i)).toBeInTheDocument();
-        expect(screen.getByText(/Déposez votre CV ici/i)).toBeInTheDocument();
-        expect(screen.getByText(/ou cliquez pour sélectionner un fichier/i)).toBeInTheDocument();
-        expect(screen.getByText(/PDF uniquement/i)).toBeInTheDocument();
+    it("démarre à l'étape 1 et affiche le bouton de skip si profil existant", async () => {
+        // Mock fetch pour /api/cv/profil: retourne un profil avec des experiences pour que hasProfile = true
+        global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({
+            experiences: [{ titre: "Dev" }], formations: [], competences: [],
+            projets: [], langues: [], ville: '', resume: '', linkedin: '', github: '', portfolio: ''
+        }) });
+
+        render(<MemoryRouter><Page_nouveau_cv accessToken="fake" setAccessToken={vi.fn()} /></MemoryRouter>);
+
+        // Attendre que hasProfile soit set en cherchant le texte "Passer l'import"
+        const skipBtn = await screen.findByText(/Passer l'import/i);
+        expect(skipBtn).toBeInTheDocument();
+
+        const user = userEvent.setup();
+        await user.click(skipBtn);
+
+        // On passe à l'étape 3 directement (skip → offre d'emploi)
+        // "Offre d'emploi" apparaît 2 fois : dans le Stepper + dans le titre de l'étape 3
+        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(2);
     });
 
-    it('affiche le header avec le titre et le sous-titre', () => {
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
+    it("permet d'importer un CV, vérifier les données (étape 2), analyser l'offre (étape 3) et générer (étape 4)", async () => {
+        // 1. Fetch initial = pas de profil enregistré (donc pas de bouton skip)
+        global.fetch.mockResolvedValueOnce({ ok: false, json: async () => ({}) });
 
-        expect(screen.getByText(/Import de CV/i)).toBeInTheDocument();
-        expect(screen.getByText(/Téléchargez votre CV en PDF/i)).toBeInTheDocument();
-    });
-
-    it('ignore les fichiers non-PDF lors du dépôt', () => {
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
-
-        // Simuler un dépôt de fichier non-PDF
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakeFile = new File(['contenu'], 'document.txt', { type: 'text/plain' });
-
-        // Déclencher l'événement drop avec un fichier non-PDF
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakeFile] };
-        dropzone.dispatchEvent(dropEvent);
-
-        // L'API ne doit pas être appelée
-        expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    it('appelle l\'API /parse quand un fichier PDF est déposé', async () => {
-        const profilMock = {
-            prenom: 'Jean', nom: 'Dupont', email: 'jean@test.com',
-            telephone: '0612345678', ville: 'Paris', linkedin: '',
-            experiences: [], formations: [], competences: [], projets: [], langues: []
-        };
-
-        global.fetch.mockResolvedValueOnce({
-            ok: true,
-            json: async () => profilMock
-        });
-
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
-
-        // Simuler un dépôt de fichier PDF
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakePdf = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' });
-
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakePdf] };
-        dropzone.dispatchEvent(dropEvent);
-
-        await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
-                'http://localhost:8000/api/cv/parse',
-                expect.objectContaining({
-                    method: 'POST',
-                    headers: expect.objectContaining({
-                        Authorization: 'Bearer fake-token'
-                    })
-                })
-            );
-        });
-    });
-
-    it('affiche les résultats après une analyse réussie', async () => {
-        const profilMock = {
-            prenom: 'Jean', nom: 'Dupont', email: 'jean@test.com',
-            telephone: '0612345678', ville: 'Paris', linkedin: 'linkedin.com/jean',
-            experiences: [
-                { titre: 'Développeur', entreprise: 'TechCorp', duree: '2 ans', lieu: 'Paris', description: ['React', 'Node'] }
-            ],
-            formations: [
-                { diplome: 'Master Info', etablissement: 'Université Paris', annee: '2020', description: [] }
-            ],
-            competences: [
-                { categorie: 'Langages', elements: ['JavaScript', 'Python'] }
-            ],
-            projets: [], langues: []
-        };
-
-        global.fetch.mockResolvedValueOnce({
-            ok: true,
-            json: async () => profilMock
-        });
-
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
-
-        // Simuler le dépôt d'un PDF
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakePdf = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' });
-
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakePdf] };
-        dropzone.dispatchEvent(dropEvent);
-
-        // Attendre que la vue résultats s'affiche
-        await waitFor(() => {
-            expect(screen.getByText(/CV analysé avec succès/i)).toBeInTheDocument();
-        });
-
-        // Vérifier les informations personnelles
-        expect(screen.getByText('Jean')).toBeInTheDocument();
-        expect(screen.getByText('Dupont')).toBeInTheDocument();
-        expect(screen.getByText('jean@test.com')).toBeInTheDocument();
-
-        // Vérifier les expériences
-        expect(screen.getByText('Développeur')).toBeInTheDocument();
-        expect(screen.getByText(/TechCorp/i)).toBeInTheDocument();
-
-        // Vérifier les compétences
-        expect(screen.getByText('JavaScript')).toBeInTheDocument();
-        expect(screen.getByText('Python')).toBeInTheDocument();
-    });
-
-    it('affiche les boutons d\'action après analyse', async () => {
-        const profilMock = {
-            prenom: 'Jean', nom: 'Dupont', email: 'jean@test.com',
-            telephone: '0612345678', ville: 'Paris', linkedin: '',
-            experiences: [], formations: [], competences: [], projets: [], langues: []
-        };
-
-        global.fetch.mockResolvedValueOnce({
-            ok: true,
-            json: async () => profilMock
-        });
-
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
-
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakePdf = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' });
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakePdf] };
-        dropzone.dispatchEvent(dropEvent);
-
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: /Réimporter/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /Générer mon CV/i })).toBeInTheDocument();
-        });
-    });
-
-    it('redirige vers /nouveau-cv quand on clique sur "Générer mon CV"', async () => {
-        const profilMock = {
-            prenom: 'Jean', nom: 'Dupont', email: 'jean@test.com',
-            telephone: '0612345678', ville: 'Paris', linkedin: '',
-            experiences: [], formations: [], competences: [], projets: [], langues: []
-        };
-
-        global.fetch.mockResolvedValueOnce({
-            ok: true,
-            json: async () => profilMock
-        });
-
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
+        const { container } = render(<MemoryRouter><Page_nouveau_cv accessToken="fake" setAccessToken={vi.fn()} /></MemoryRouter>);
         const user = userEvent.setup();
 
-        // Déposer un PDF
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakePdf = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' });
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakePdf] };
-        dropzone.dispatchEvent(dropEvent);
+        // Attendre que l'interface soit chargée
+        await screen.findByText(/Déposez votre CV ici/i);
 
-        // Attendre les boutons puis cliquer
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: /Générer mon CV/i })).toBeInTheDocument();
-        });
+        // --- Etape 1 : Upload CV ---
+        const file = new File(['hello'], 'hello.pdf', { type: 'application/pdf' });
 
-        await user.click(screen.getByRole('button', { name: /Générer mon CV/i }));
-        expect(mockedNavigate).toHaveBeenCalledWith('/nouveau-cv');
-    });
-
-    it('revient à la vue upload quand on clique sur "Réimporter"', async () => {
-        const profilMock = {
-            prenom: 'Jean', nom: 'Dupont', email: 'jean@test.com',
-            telephone: '0612345678', ville: 'Paris', linkedin: '',
-            experiences: [], formations: [], competences: [], projets: [], langues: []
-        };
-
+        // Mock pour upload_cv
         global.fetch.mockResolvedValueOnce({
             ok: true,
-            json: async () => profilMock
+            json: async () => ({
+                nom: "Smith", prenom: "Will", experiences: [], formations: [], competences: [],
+                telephone: '', ville: '', linkedin: '', github: '', portfolio: '', resume: '', projets: [], langues: []
+            })
         });
 
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
-        const user = userEvent.setup();
+        const fileInput = container.querySelector('input[type="file"]');
+        await user.upload(fileInput, file);
 
-        // Déposer un PDF
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakePdf = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' });
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakePdf] };
-        dropzone.dispatchEvent(dropEvent);
+        // On passe à l'étape 2 — les informations personnelles s'affichent
+        expect(await screen.findByText(/Informations personnelles/i)).toBeInTheDocument();
 
-        await waitFor(() => {
-            expect(screen.getByRole('button', { name: /Réimporter/i })).toBeInTheDocument();
-        });
+        // --- Etape 2 -> 3 ---
+        const nextBtn = screen.getByRole('button', { name: /Valider le profil/i });
+        await user.click(nextBtn);
 
-        await user.click(screen.getByRole('button', { name: /Réimporter/i }));
+        // "Offre d'emploi" apparaît 2 fois : dans le Stepper + dans le titre de l'étape 3
+        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(2);
 
-        // La zone de dépôt doit réapparaître
-        expect(screen.getByText(/Déposez votre CV ici/i)).toBeInTheDocument();
-    });
+        // --- Etape 3 : Analyse Offre ---
+        await user.type(screen.getByPlaceholderText(/Collez ici le texte de l'offre/i), "Nous cherchons un dev React.");
 
-    it('affiche une alerte si l\'API retourne une erreur', async () => {
+        // Mock analyse
         global.fetch.mockResolvedValueOnce({
-            ok: false,
-            json: async () => ({ detail: 'Erreur serveur' })
+            ok: true,
+            json: async () => ({ titre_poste: "Dev React", entreprise: "TechCorp", competences_requises: ["React"] })
         });
 
-        // Mocker alert pour vérifier qu'il est appelé
-        const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+        await user.click(screen.getByRole('button', { name: /Analyser l'offre/i }));
 
-        render(<MemoryRouter><Page_import_cv accessToken="fake-token" setAccessToken={setAccessTokenMock} /></MemoryRouter>);
+        // On vérifie que l'analyse s'affiche
+        expect(await screen.findByText("Dev React")).toBeInTheDocument();
 
-        const dropzone = screen.getByText(/Déposez votre CV ici/i).closest('.imp-dropzone');
-        const fakePdf = new File(['%PDF-1.4'], 'cv.pdf', { type: 'application/pdf' });
-        const dropEvent = new Event('drop', { bubbles: true });
-        dropEvent.dataTransfer = { files: [fakePdf] };
-        dropzone.dispatchEvent(dropEvent);
-
-        await waitFor(() => {
-            expect(alertMock).toHaveBeenCalled();
+        // --- Etape 3 -> 4 : Génération ---
+        // Mock génération
+        global.fetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ html_cv: "<html><body>CV généré</body></html>", html_lettre: "<html><body>Lettre</body></html>" })
         });
 
-        alertMock.mockRestore();
+        await user.click(screen.getByRole('button', { name: /Générer le CV/i }));
+
+        // Vérification de l'étape 4
+        expect(await screen.findByRole('button', { name: /Voir le CV/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Voir la Lettre/i })).toBeInTheDocument();
     });
 });

@@ -13,62 +13,48 @@ const NIVEAUX_REGEX = /\b(A1|A2|B1|B2|C1|C2|Natif|Courant|Avancé|Intermédiaire
 
 // ── Nettoie un numéro de téléphone (gère les préfixes internationaux) ──────
 // Convertit +33/33 en 0, garde uniquement les 10 derniers chiffres
-// >>> Mesure défensive contre l'IA : le LLM peut renvoyer "+33612345678"
-//     au lieu du format français attendu "0612345678" — cette fonction
-//     normalise systématiquement le format avant affichage.
 const cleanPhone = (phone) => {
-    if (!phone) return ''; // Retourne vide si pas de téléphone
-    // Supprime les caractères non numériques sauf +, remplace les préfixes FR/MA
+    if (!phone) return '';
     let c = phone.replace(/[^\d+]/g, '').replace(/^\+33/, '0').replace(/^\+212/, '0').replace(/^33/, '0');
-    const d = c.replace(/\D/g, ''); // Extrait uniquement les chiffres
-    return d.length >= 10 ? '0' + d.slice(-9) : c; // Formate en 10 chiffres français
+    const d = c.replace(/\D/g, '');
+    return d.length >= 10 ? '0' + d.slice(-9) : c;
 };
 
-// ── Nettoie un élément de compétence (supprime URLs, parenthèses, etc.) ───
-// Retourne une chaîne vide si l'élément est invalide ou trop court
+// ── Nettoie un élément de compétence ───
 const cleanCompetenceElement = (el) => {
-    if (!el || typeof el !== 'string') return ''; // Ignore les non-strings
+    if (!el || typeof el !== 'string') return '';
     let c = el.trim()
-        .replace(/\(?https?:\/\/\S+\)?/g, '') // Supprime les URLs
-        .replace(/^[)\]]+\s*/g, '').replace(/\s*[(\[]+$/g, '') // Supprime parenthèses en début/fin
-        .replace(/[()[\]]/g, '') // Supprime toutes les parenthèses restantes
-        .replace(/^[\s,;:.!?\-–—]+/g, '').replace(/[\s,;:.!?\-–—]+$/g, '') // Supprime ponctuation
+        .replace(/\(?https?:\/\/\S+\)?/g, '')
+        .replace(/^[)\]]+\s*/g, '').replace(/\s*[(\[]+$/g, '')
+        .replace(/[()\[\]]/g, '')
+        .replace(/^[\s,;:.!?\-–—]+/g, '').replace(/[\s,;:.!?\-–—]+$/g, '')
         .trim();
-    // Filtre : trop court, uniquement chiffres, ou uniquement symboles
-    if (c.length <= 1 || /^\d+$/.test(c) || /^[()[\]{}<>]+$/.test(c)) return '';
-    return c; // Retourne la compétence nettoyée
+    if (c.length <= 1 || /^\d+$/.test(c) || /^[()\[\]{}<>]+$/.test(c)) return '';
+    return c;
 };
 
-// ── Nettoie un tableau de compétences (nettoie chaque élément et filtre) ──
-// Parcourt chaque catégorie, nettoie ses éléments, supprime les vides
+// ── Nettoie un tableau de compétences ──
 const cleanCompetences = (competences) =>
     (competences || [])
         .map(cat => ({ ...cat, elements: (cat.elements || []).map(cleanCompetenceElement).filter(Boolean) }))
-        .filter(cat => cat.elements.length > 0); // Supprime les catégories vides
+        .filter(cat => cat.elements.length > 0);
 
 // ── Parse une chaîne de langue en objet { nom, niveau } ──────────────────
-// Ex: "Anglais (C1)" → { nom: "Anglais", niveau: "C1" }
 const parseLangue = (str) => {
-    // Supprime les parenthèses et nettoie les espaces
     const cleaned = str.replace(/[()]/g, '').trim();
-    // Cherche un niveau standard (A1-C2, Natif, etc.) via regex
     const match = cleaned.match(NIVEAUX_REGEX);
     if (match) {
-        // Extrait le nom avant le niveau détecté
         const nom = cleaned.substring(0, match.index).replace(/[-–—:,\s]+$/, '').trim();
         return { nom: nom || cleaned, niveau: match[0].trim() };
     }
-    // Fallback : essaie de séparer par des tirets ou deux-points
     for (const sep of [' — ', ' - ', ' – ', ' : ']) {
         const parts = cleaned.split(sep);
         if (parts.length === 2 && parts[1].trim()) return { nom: parts[0].trim(), niveau: parts[1].trim() };
     }
-    // Aucun niveau détecté : retourne le nom complet sans niveau
     return { nom: cleaned, niveau: '' };
 };
 
-// ── Icône SVG réutilisable : affiche un path SVG avec taille et couleur ───
-// Composant générique pour toutes les icônes de cette page
+// ── Icône SVG réutilisable ───
 const Icon = ({ d, size = 16, color = theme.accent }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
         stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -76,7 +62,7 @@ const Icon = ({ d, size = 16, color = theme.accent }) => (
     </svg>
 );
 
-// ── Dictionnaire des icônes SVG utilisées dans le générateur de CV ───────
+// ── Dictionnaire des icônes SVG ───────
 const ICONS = {
     upload:   'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12',
     user:     'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
@@ -97,8 +83,7 @@ const ICONS = {
     skip:     'M5 4l10 8-10 8V4z M19 5v14',
 };
 
-// ── Composants réutilisables : Card, SectionTitle, champs, boutons ─────────
-// Carte avec fond, bordure arrondie (memo pour perf, forwardRef pour ref)
+// ── Composants réutilisables ─────────
 const Card = memo(forwardRef(({ children, style = {} }, ref) => (
     <div ref={ref} style={{
         background: theme.surface, border: `1.5px solid ${theme.border}`,
@@ -106,23 +91,20 @@ const Card = memo(forwardRef(({ children, style = {} }, ref) => (
     }}>{children}</div>
 )));
 
-// Titre de section avec icône et label en majuscules
 const SectionTitle = ({ icon, label }) => (
     <p style={{
         fontSize: 13, fontWeight: 700, color: theme.text,
         margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8,
         textTransform: 'uppercase', letterSpacing: '.05em',
     }}>
-        <Icon d={ICONS[icon]} size={14} color={theme.accent} /> {/* Icône de la section */}
-        {label} {/* Texte du titre */}
+        <Icon d={ICONS[icon]} size={14} color={theme.accent} />
+        {label}
     </p>
 );
 
-// Champ de saisie avec label optionnel, effets focus/blur
 const FieldInput = memo(({ label, value, onChange, type = 'text', placeholder = '' }) => (
     <div style={{ marginBottom: 12 }}>
         {label && <label style={{ fontSize: 12, fontWeight: 600, color: theme.textSecondary, display: 'block', marginBottom: 5 }}>{label}</label>}
-        {/* Input avec styles inline et gestion du focus */}
         <input type={type} placeholder={placeholder} value={value || ''} onChange={e => onChange(e.target.value)}
             style={{
                 background: theme.surfaceAlt, border: `1.5px solid ${theme.border}`, borderRadius: 8,
@@ -136,11 +118,9 @@ const FieldInput = memo(({ label, value, onChange, type = 'text', placeholder = 
     </div>
 ));
 
-// Zone de texte multiligne avec label optionnel
 const FieldTextarea = memo(({ label, value, onChange, rows = 3, placeholder = '' }) => (
     <div style={{ marginBottom: 12 }}>
         {label && <label style={{ fontSize: 12, fontWeight: 600, color: theme.textSecondary, display: 'block', marginBottom: 5 }}>{label}</label>}
-        {/* Textarea redimensionnable verticalement */}
         <textarea rows={rows} placeholder={placeholder} value={value || ''} onChange={e => onChange(e.target.value)}
             style={{
                 background: theme.surfaceAlt, border: `1.5px solid ${theme.border}`, borderRadius: 8,
@@ -154,10 +134,8 @@ const FieldTextarea = memo(({ label, value, onChange, rows = 3, placeholder = ''
     </div>
 ));
 
-// Spinner de chargement avec message
 const Spinner = ({ msg }) => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '56px 0' }}>
-        {/* Cercle qui tourne avec bordure accentuée en haut */}
         <div style={{
             width: 36, height: 36, borderRadius: '50%',
             border: `3px solid ${theme.border}`, borderTopColor: theme.accent,
@@ -167,7 +145,6 @@ const Spinner = ({ msg }) => (
     </div>
 );
 
-// Sous-carte pour les éléments individuels (expérience, formation, etc.)
 const SubCard = ({ children }) => (
     <div style={{
         background: theme.surfaceAlt, border: `1px solid ${theme.border}`,
@@ -175,7 +152,6 @@ const SubCard = ({ children }) => (
     }}>{children}</div>
 );
 
-// Bouton de suppression (×) en haut à droite d'une sous-carte
 const RemoveBtn = ({ onClick }) => (
     <button onClick={onClick} style={{
         position: 'absolute', top: 10, right: 12,
@@ -183,17 +159,15 @@ const RemoveBtn = ({ onClick }) => (
         color: theme.textMuted, padding: 2, display: 'flex', alignItems: 'center',
         borderRadius: 4, transition: 'color 0.13s',
     }}
-        onMouseEnter={e => e.currentTarget.style.color = theme.error} // Rouge au hover
+        onMouseEnter={e => e.currentTarget.style.color = theme.error}
         onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}>
         <Icon d={ICONS.x} size={14} color="currentColor" />
     </button>
 );
 
-// Bouton "Ajouter" avec bordure pointillée et icône +
 const AddBtn = ({ label, onClick }) => (
     <button onClick={onClick} style={{
         display: 'flex', alignItems: 'center', gap: 6,
-        /* ✅ FIX: border plus visible — #94A3B8 au lieu de var(--border) */
         background: 'transparent', border: '1.5px dashed #94A3B8',
         borderRadius: 8, padding: '8px 16px',
         fontSize: 13, fontWeight: 600, color: '#64748B',
@@ -207,8 +181,7 @@ const AddBtn = ({ label, onClick }) => (
     </button>
 );
 
-// ── Stepper : indicateur visuel des 4 étapes du processus ──────────────────
-// Les 4 étapes : Import CV → Modifier profil → Offre d'emploi → CV généré
+// ── Stepper ──────────────────
 const STEPS = ['Import CV', 'Modifier profil', "Offre d'emploi", 'CV généré'];
 
 const Stepper = ({ step }) => (
@@ -218,12 +191,10 @@ const Stepper = ({ step }) => (
             return (
                 <div key={num} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {/* Cercle */}
                         <div style={{
                             width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 12, fontWeight: 700,
-                            // ✅ Inactif : fond transparent + bordure bien visible #64748B
                             background: done ? theme.success : active ? theme.accent : 'transparent',
                             border: done || active ? 'none' : '2px solid #64748B',
                             color: done || active ? '#fff' : '#64748B',
@@ -231,15 +202,12 @@ const Stepper = ({ step }) => (
                         }}>
                             {done ? <Icon d={ICONS.check} size={13} color="#fff" /> : num}
                         </div>
-                        {/* Label */}
                         <span style={{
                             fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
-                            // ✅ Label inactif : #64748B lisible en dark ET light
                             color: done ? theme.success : active ? '#fff' : '#64748B',
                         }}>{label}</span>
                     </div>
                     {i < STEPS.length - 1 && (
-                        // ✅ Ligne de connexion : #64748B au lieu de var(--border) qui était blanc sur fond sombre
                         <div style={{
                             flex: 1, height: 2, margin: '0 10px',
                             background: done ? theme.success : '#64748B',
@@ -254,180 +222,134 @@ const Stepper = ({ step }) => (
 );
 
 // ══ Page Nouveau CV : générateur complet en 4 étapes ════════════════════════
-// Composant principal qui gère tout le flux : import → édition → analyse → génération
-// >>> C'EST LE FICHIER FRONTEND LE PLUS IMPORTANT — il orchestre les 4 appels
-//     backend du pipeline complet : /parse (import) → /profil PUT (sauvegarde)
-//     → /analyze-offer (analyse) → /generate (génération finale). Chaque
-//     fonction correspond à UNE étape du Stepper visuel (STEPS ci-dessus).
 export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
-    const navigate = useNavigate(); // Hook de navigation pour les redirections
-    const inputRef = useRef(); // Référence vers l'input file caché
+    const navigate = useNavigate();
+    const inputRef = useRef();
 
-    // ── États locaux du composant ──────────────────────────────────────────────
-    const [step,        setStep]       = useState(1); // Étape actuelle du stepper (1 à 4)
-    const [loading,     setLoading]    = useState(false); // Chargement pour import/analyse
-    const [loadingGen,  setLoadingGen] = useState(false); // Chargement spécifique à la génération
-    const [dragOver,    setDragOver]   = useState(false); // Survol drag & drop
-    const [texteOffre,  setTexteOffre] = useState(''); // Texte de l'offre d'emploi collée
-    const [analyse,     setAnalyse]    = useState(null); // Résultat de l'analyse IA de l'offre
-    const [htmlCv,      setHtmlCv]     = useState(null); // HTML du CV généré
-    const [htmlLettre,  setHtmlLettre] = useState(null); // HTML de la lettre de motivation
-    const [showLettre,  setShowLettre] = useState(false); // Affiche la lettre ou le CV
-    const [toast,       setToast]      = useState(''); // Message toast temporaire
-    const analyseRef  = useRef(null); // Ref pour scroller vers le résultat d'analyse
-    const generateRef = useRef(null); // Ref pour scroller vers la zone de génération
+    // ── États locaux ──────────────────────────────────────────────
+    const [step,        setStep]       = useState(1);
+    const [loading,     setLoading]    = useState(false);
+    const [loadingGen,  setLoadingGen] = useState(false);
+    const [dragOver,    setDragOver]   = useState(false);
+    const [texteOffre,  setTexteOffre] = useState('');
+    const [analyse,     setAnalyse]    = useState(null);
+    const [htmlCv,      setHtmlCv]     = useState(null);
+    const [htmlLettre,  setHtmlLettre] = useState(null);
+    const [showLettre,  setShowLettre] = useState(false);
+    const [toast,       setToast]      = useState('');
+    const [hasProfile,  setHasProfile]  = useState(false);
+    const analyseRef  = useRef(null);
+    const generateRef = useRef(null);
 
-    // État du profil utilisateur : données personnelles + expériences + formations + etc.
     const [profil, setProfil] = useState({
         prenom: '', nom: '', email: '', telephone: '', ville: '',
         linkedin: '', github: '', portfolio: '', resume: '',
         experiences: [], formations: [], competences: [], projets: [], langues: [],
     });
 
-    // Affiche un message toast pendant 2.5 secondes puis le masque
     const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
 
-
-
     useEffect(() => { if (analyse) setTimeout(() => analyseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }, [analyse]);
-    // >>> Ces 2 useEffect font défiler automatiquement la page vers le
-    //     résultat d'analyse ou la zone de génération dès qu'ils apparaissent
-    //     — UX : évite que l'utilisateur doive scroller manuellement pour
-    //     voir le résultat de son action.
     useEffect(() => { if (loadingGen && generateRef.current) setTimeout(() => generateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100); }, [loadingGen]);
 
-    // ── Helpers : fonctions utilitaires pour mettre à jour l'état du profil ───
-    // >>> useCallback(fn, []) = MÉMOÏSE la fonction — React garde la MÊME
-    //     référence de fonction entre les rendus (tant que les dépendances
-    //     ne changent pas). Utile ici car ces fonctions sont passées en
-    //     props à des composants "memo" (Card, FieldInput...) plus bas —
-    //     sans useCallback, une nouvelle fonction serait créée à chaque
-    //     rendu, cassant l'optimisation memo().
-    // Met à jour un champ simple du profil (ex: prenom, nom, email...)
-    // >>> setProfil(p => ({ ...p, [f]: v })) = pattern IMMUABLE : on ne
-    //     modifie jamais l'état directement, on crée un NOUVEL objet qui
-    //     copie tous les champs existants (...p) et écrase juste le champ
-    //     [f] — obligatoire pour que React détecte le changement et re-rende.
+    // ── Vérifie au montage si l'utilisateur a déjà un profil enregistré ─────
+    useEffect(() => {
+        const fetchProfil = async () => {
+            try {
+                const res = await fetch('http://localhost:8000/api/cv/profil', {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.experiences?.length > 0) {
+                        setHasProfile(true);
+                    }
+                }
+            } catch (e) { /* Ignore les erreurs réseau */ }
+        };
+        if (accessToken) fetchProfil();
+    }, [accessToken]);
+
+    // ── Helpers ───
     const updateField       = useCallback((f, v) => setProfil(p => ({ ...p, [f]: v })), []);
-    // Met à jour un champ d'un élément dans un tableau (ex: titre d'une expérience)
     const updateArrayItem   = useCallback((arr, idx, f, v) => setProfil(p => { const a = [...p[arr]]; a[idx] = { ...a[idx], [f]: v }; return { ...p, [arr]: a }; }), []);
-    // Ajoute un nouvel élément dans un tableau (ex: nouvelle expérience)
     const addArrayItem      = useCallback((arr, tpl) => setProfil(p => ({ ...p, [arr]: [...p[arr], { ...tpl }] })), []);
-    // Supprime un élément d'un tableau par son index
     const removeArrayItem   = useCallback((arr, idx) => setProfil(p => ({ ...p, [arr]: p[arr].filter((_, i) => i !== idx) })), []);
-    // Ajoute un élément vide dans une catégorie de compétences
     const addCompEl         = useCallback((ci) => setProfil(p => { const c = [...p.competences]; c[ci] = { ...c[ci], elements: [...(c[ci].elements || []), ''] }; return { ...p, competences: c }; }), []);
-    // Met à jour la valeur d'un élément de compétence spécifique
     const updateCompEl      = useCallback((ci, ei, v) => setProfil(p => { const c = [...p.competences]; const e = [...c[ci].elements]; e[ei] = v; c[ci] = { ...c[ci], elements: e }; return { ...p, competences: c }; }), []);
-    // Supprime un élément de compétence par ses indices catégorie/élément
     const removeCompEl      = useCallback((ci, ei) => setProfil(p => { const c = [...p.competences]; c[ci] = { ...c[ci], elements: c[ci].elements.filter((_, i) => i !== ei) }; return { ...p, competences: c }; }), []);
 
-    // ── Step 1 : Import — envoie le PDF au backend pour extraction ─────────
-    // Gère l'upload d'un fichier PDF : l'envoie au serveur, reçoit les données extraites
-    // >>> Contrairement à Page_import_cv.jsx, ici le résultat va DIRECTEMENT
-    //     remplir l'état "profil" du composant (pas sessionStorage) — c'est
-    //     le flux principal et autonome de génération complète en 4 étapes.
+    // ── Step 1 : Import ─────────
     const handleFichier = async (file) => {
-        // Vérifie que le fichier existe et est bien un PDF
         if (!file || file.type !== 'application/pdf') return;
-        setLoading(true); // Active le spinner de chargement
-        const fd = new FormData(); fd.append('file', file); // Crée le FormData avec le fichier
+        setLoading(true);
+        const fd = new FormData(); fd.append('file', file);
         try {
-            // Envoie le PDF au endpoint de parsing
             const res = await fetch('http://localhost:8000/api/cv/parse', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: fd });
-            // Si erreur HTTP, extrait le message et lance une exception
             if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `Erreur (${res.status})`); }
-            const data = await res.json(); // Parse la réponse JSON avec les données extraites
-            // Nettoie les langues reçues (string → objet {nom, niveau})
+            const data = await res.json();
             const langues = (data.langues || []).map(l => typeof l === 'string' ? parseLangue(l) : l);
-            // Remplit le profil avec les données extraites du CV
             setProfil({ prenom: data.prenom||'', nom: data.nom||'', email: data.email||'', telephone: cleanPhone(data.telephone), ville: data.ville||'', linkedin: data.linkedin||'', github: data.github||'', portfolio: data.portfolio||'', resume: data.resume||'', experiences: data.experiences||[], formations: data.formations||[], competences: cleanCompetences(data.competences), projets: data.projets||[], langues });
-            setStep(2); // Passe à l'étape d'édition du profil
-        } catch (err) { console.error(err); alert(err.message); } // Affiche l'erreur à l'utilisateur
-        finally { setLoading(false); } // Désactive le spinner dans tous les cas
+            setStep(2);
+        } catch (err) { console.error(err); alert(err.message); }
+        finally { setLoading(false); }
     };
 
-    // ── Step 3 : Analyse l'offre d'emploi via l'IA ──────────────────────────
-    // Envoie le texte de l'offre au backend pour extraction des compétences/niveau
+    // ── Step 3 : Analyse l'offre ──────────────────────────
     const analyserOffre = async () => {
-        if (!texteOffre.trim()) return; // Ne pas envoyer si le champ est vide
-        setLoading(true); // Active le spinner
+        if (!texteOffre.trim()) return;
+        setLoading(true);
         try {
-            // Appelle le endpoint d'analyse avec le texte de l'offre
             const res = await fetch('http://localhost:8000/api/cv/analyze-offer', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ texteOffre }) });
-            if (!res.ok) { const e = await res.json(); throw new Error(e.detail); } // Erreur HTTP
-            setAnalyse(await res.json()); // Stocke le résultat d'analyse (titre, compétences, etc.)
-        } catch (err) { alert(err.message); } // Affiche l'erreur
-        finally { setLoading(false); } // Désactive le spinner
+            if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+            setAnalyse(await res.json());
+        } catch (err) { alert(err.message); }
+        finally { setLoading(false); }
     };
 
-    // ── Step 3 → 4 : Génère le CV et la lettre de motivation via l'IA ──────
-    // Combine le profil + l'analyse de l'offre pour générer un CV personnalisé
+    // ── Step 3 → 4 : Génère le CV ──────
     const genererCV = async () => {
-        setLoadingGen(true); // Active le spinner de génération
+        setLoadingGen(true);
         try {
-            // Formate les langues en string pour l'envoi (objet → "Nom — Niveau")
             const profilToSend = { ...profil, langues: profil.langues.map(l => typeof l === 'string' ? l : `${l.nom}${l.niveau ? ' — ' + l.niveau : ''}`) };
-            const body = { analyseOffre: analyse }; // Corps de la requête avec l'analyse
-            // N'envoie le profil que s'il contient des données
+            const body = { analyseOffre: analyse };
             if (profil.prenom || profil.nom || (profil.experiences || []).length > 0) body.profil = profilToSend;
-            // Appelle le endpoint de génération de CV
             const res = await fetch('http://localhost:8000/api/cv/generate', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(body) });
-            if (!res.ok) { const e = await res.json(); throw new Error(e.detail); } // Erreur HTTP
-            const data = await res.json(); // Parse la réponse avec les HTML générés
-            // Stocke les HTML et passe à l'étape 4 (affichage du CV)
+            if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+            const data = await res.json();
             setHtmlCv(data.html_cv); setHtmlLettre(data.html_lettre); setStep(4); setTexteOffre(''); setAnalyse(null); setShowLettre(false);
-        } catch (err) { alert(err.message); } // Affiche l'erreur
-        finally { setLoadingGen(false); } // Désactive le spinner
+        } catch (err) { alert(err.message); }
+        finally { setLoadingGen(false); }
     };
 
-    // ── Valide le profil : sauvegarde en BDD puis passe à l'étape suivante ──
-    // Combine la sauvegarde et la navigation en une seule action
-    // >>> C'EST LE BOUTON "Enregistrer le profil" — il appelle PUT /api/cv/
-    //     profil (voir routes/cv.py), qui fait le DELETE+INSERT en BDD.
-    //     Distinct de "Valider le profil" (qui, lui, avance juste à step 3
-    //     sans forcément sauvegarder — vu dans le rendu JSX plus bas).
+    // ── Valide le profil ──
     const validerProfil = async () => {
-        setLoading(true); // Active le spinner
+        setLoading(true);
         try {
-            // Formate les langues en string pour l'envoi
             const profilToSave = { ...profil, langues: profil.langues.map(l => typeof l === 'string' ? l : `${l.nom}${l.niveau ? ' — ' + l.niveau : ''}`) };
-            // Envoie le profil au serveur pour le sauvegarder en BDD
             const res = await fetch('http://localhost:8000/api/cv/profil', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` }, body: JSON.stringify(profilToSave) });
-            if (!res.ok) { const e = await res.json(); throw new Error(e.detail); } // Erreur HTTP
-            showToast('Profil enregistré'); // Affiche un toast de confirmation
-            setStep(3); // Passe à l'étape d'analyse de l'offre
-        } catch (err) { alert(err.message); } // Affiche l'erreur
-        finally { setLoading(false); } // Désactive le spinner
+            if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+            showToast('Profil enregistré');
+            setStep(3);
+        } catch (err) { alert(err.message); }
+        finally { setLoading(false); }
     };
 
-    // ── Télécharge le CV ou la lettre de motivation en PDF via impression ──
-    // Crée un iframe caché, y injecte le HTML, et lance la boîte de dialogue d'impression
-    // >>> ASTUCE TECHNIQUE : pas de vrai téléchargement PDF ici — on utilise
-    //     la fonction NATIVE d'impression du navigateur (window.print()) sur
-    //     un iframe invisible contenant le HTML du CV. L'utilisateur choisit
-    //     "Enregistrer en PDF" comme imprimante dans la boîte de dialogue
-    //     système. C'est différent du PDF généré côté SERVEUR par Playwright
-    //     (cv_pipeline.py) — ici c'est le NAVIGATEUR qui imprime le HTML reçu.
+    // ── Télécharge le CV ──
     const telecharger = () => {
-        const activeHtml = showLettre ? htmlLettre : htmlCv; // Sélectionne le HTML actif
-        if (!activeHtml) return; // Ne fait rien si pas de contenu
-        // Détermine le nom de fichier selon le type de document
+        const activeHtml = showLettre ? htmlLettre : htmlCv;
+        if (!activeHtml) return;
         const nomFichier = showLettre
             ? `Lettre de Motivation - ${profil.prenom || ''} ${profil.nom || ''}`.trim()
             : `CV - ${profil.prenom || ''} ${profil.nom || ''}`.trim();
-        // Modifie temporairement le titre de la page pour que le navigateur propose ce nom
         const titreOriginal = document.title;
         document.title = nomFichier;
-        const iframe = document.createElement('iframe'); // Crée un iframe caché
-        iframe.style.display = 'none'; document.body.appendChild(iframe); // L'ajoute au DOM
-        // Ouvre le document de l'iframe et y écrit le HTML du CV/lettre
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none'; document.body.appendChild(iframe);
         iframe.contentWindow.document.open(); iframe.contentWindow.document.write(activeHtml); iframe.contentWindow.document.close();
-        // Attend un court délai pour que le navigateur prenne en compte le nouveau titre
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
-            // Supprime l'iframe et restaure le titre original après impression
             setTimeout(() => {
                 document.body.removeChild(iframe);
                 document.title = titreOriginal;
@@ -437,123 +359,46 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
 
     return (
         <>
-            {/* ── Styles CSS intégrés pour cette page (animations, layout, composants) ── */}
             <style>{`
-                /* ── Animation de rotation pour le spinner de chargement ── */
                 @keyframes ncvSpin { to { transform: rotate(360deg); } }
-
-                /* ── Layout principal : racine, en-tête, contenu ── */
-                .ncv-root    { min-height: 100vh; background: var(--bg-alt); } /* Conteneur pleine hauteur */
-                .ncv-header  { max-width: 1000px; margin: 0 auto; padding: 36px 32px 0; } /* En-tête centré */
-                .ncv-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 10px; display: flex; align-items: center; gap: 6px; } /* Sur-titre en majuscules */
-                .ncv-h1      { font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 5px; letter-spacing: -0.02em; } /* Titre principal */
-                .ncv-sub     { font-size: 14px; color: var(--text-secondary); margin: 0 0 28px; } /* Sous-titre descriptif */
-                .ncv-content { max-width: 1000px; margin: 0 auto; padding: 24px 32px 64px; } /* Zone de contenu centrée */
-
-                /* ── Zone de dépôt de fichier (drag & drop) ── */
-                .ncv-dropzone { background: var(--bg); border: 2px dashed var(--border); border-radius: 14px; padding: 72px 32px; display: flex; flex-direction: column; align-items: center; gap: 16px; cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; } /* Zone pointillée avec effet hover */
-                .ncv-dropzone:hover, .ncv-dropzone.over { border-color: var(--accent); background: var(--accent-muted); } /* Survol ou drag au-dessus */
-                .ncv-drop-icon  { width: 52px; height: 52px; border-radius: 12px; background: var(--accent-muted); display: flex; align-items: center; justify-content: center; } /* Icône d'upload ronde */
-                .ncv-drop-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 0; } /* Titre "Déposez votre CV" */
-                .ncv-drop-sub   { font-size: 13.5px; color: var(--text-secondary); margin: 0; } /* Sous-texte "ou cliquez" */
-                .ncv-badge      { font-size: 11px; font-weight: 700; background: var(--bg-alt); border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 10px; color: var(--text-secondary); letter-spacing: .04em; } /* Badge "PDF uniquement" */
-
-                
-                /* ── En-tête de section avec titre + bouton Ajouter ── */
-                .ncv-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; } /* Espacement titre/bouton */
-
-                /* ✅ FIX image 2&3 : bouton "Ajouter" header — border #64748B bien visible */
-                .ncv-add-header-btn {
-                    display: flex; align-items: center; gap: 6px;
-                    background: transparent;
-                    color: #475569;
-                    /* Bordure sombre et lisible */
-                    border: 1.5px solid #64748B;
-                    border-radius: 9999px;
-                    padding: 7px 16px; font-size: 12.5px; font-weight: 600;
-                    cursor: pointer; font-family: inherit;
-                    transition: background 0.13s, border-color 0.13s, color 0.13s;
-                }
-                .ncv-add-header-btn:hover {
-                    background: var(--accent-muted);
-                    border-color: var(--accent);
-                    color: var(--accent);
-                }
-
-                /* ── Chips de compétences : pastilles éditables avec bouton × ── */
-                .ncv-comp-chip {
-                    display: inline-flex; align-items: center; gap: 4px;
-                    border: 1.5px solid #64748B;
-                    border-radius: 9999px; padding: 4px 10px;
-                    background: var(--bg);
-                }
-                .ncv-comp-input  { width: 110px; font-size: 12px; background: none; border: none; outline: none; color: var(--text); font-family: inherit; } /* Input inline dans le chip */
-                .ncv-comp-add    { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-muted); color: var(--accent); border: 1.5px solid var(--accent-light); border-radius: 9999px; padding: 5px 13px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; } /* Bouton + élément */
-                .ncv-comp-add:hover { background: var(--accent-light); } /* Hover du bouton ajouter */
-                .ncv-comp-remove { background: none; border: none; cursor: pointer; color: #94A3B8; display: flex; align-items: center; padding: 0; transition: color 0.13s; } /* Bouton × dans le chip */
-                .ncv-comp-remove:hover { color: var(--error); } /* Rouge au hover */
-
-                /* ── Badges de compétences dans le résultat d'analyse ── */
-                .ncv-skill-req { background: var(--error-light); color: var(--error); border: 1px solid rgba(220,38,38,0.25); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-block; } /* Compétence requise (rouge) */
-                .ncv-skill-opt { background: #FFFBEB; color: #92400E; border: 1px solid rgba(217,119,6,0.3); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-block; } /* Compétence souhaitée (ambre) */
-
-                /* ── Cellules d'information dans le résultat d'analyse ── */
-                .ncv-info-cell    { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; } /* Carte info avec bordure */
-                .ncv-cell-label   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 0 0 4px; } /* Label au-dessus de la valeur */
-                .ncv-cell-value   { font-size: 13.5px; font-weight: 600; color: var(--text); margin: 0; } /* Valeur affichée */
-
-                /* ── Boutons d'action : primaire, secondaire, sauvegarder, générer ── */
-                /* Bouton primaire (fond accent, texte blanc) */
-                .ncv-btn-primary {
-                    display: flex; align-items: center; gap: 7px;
-                    background: var(--accent); color: #fff;
-                    border: none; border-radius: 9999px;
-                    padding: 11px 24px; font-size: 14px; font-weight: 600;
-                    cursor: pointer; font-family: inherit;
-                    transition: background 0.15s;
-                }
-                .ncv-btn-primary:hover { background: var(--accent-hover); } /* Hover : accent plus foncé */
-
-                /* Bouton secondaire (fond transparent, bordure visible) */
-                .ncv-btn-secondary {
-                    display: flex; align-items: center; gap: 7px;
-                    background: var(--bg);
-                    color: var(--accent);
-                    border: 1.5px solid #64748B;
-                    border-radius: 9999px;
-                    padding: 11px 22px; font-size: 14px; font-weight: 600;
-                    cursor: pointer; font-family: inherit;
-                    transition: border-color 0.15s, color 0.15s, background 0.15s;
-                }
-                .ncv-btn-secondary:hover {
-                    border-color: var(--accent);
-                    color: var(--accent);
-                    background: var(--accent-muted);
-                }
-
-
-                /* Bouton de génération (fond vert plein, texte blanc) */
-                .ncv-btn-gen {
-                    display: flex; align-items: center; gap: 7px;
-                    background: #16A34A; color: #fff;
-                    border: none; border-radius: 9999px;
-                    padding: 11px 24px; font-size: 14px; font-weight: 600;
-                    cursor: pointer; font-family: inherit;
-                    transition: background 0.15s;
-                }
-                .ncv-btn-gen:hover { background: #15803D; } /* Hover : vert plus foncé */
-
-                /* ── Toast : notification temporaire en haut à droite ── */
-                .ncv-toast { position: fixed; top: 20px; right: 20px; z-index: 999; background: #16A34A; color: #fff; border-radius: 10px; padding: 13px 22px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.15); animation: ncvFadeIn 0.2s ease; } /* Toast vert de confirmation */
-                @keyframes ncvFadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } } /* Animation d'apparition du toast */
-
-                /* ── Grilles responsive et conteneur d'actions ── */
-                .ncv-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } /* Grille 3 colonnes */
-                .ncv-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } /* Grille 2 colonnes */
-                .ncv-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; } /* Grille 4 colonnes */
-                .ncv-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; } /* Conteneur de boutons centré */
-
-                /* ── Responsive : tablette et mobile (< 768px) ── */
+                .ncv-root    { min-height: 100vh; background: var(--bg-alt); }
+                .ncv-header  { max-width: 1000px; margin: 0 auto; padding: 36px 32px 0; }
+                .ncv-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
+                .ncv-h1      { font-size: 1.75rem; font-weight: 800; color: var(--text); margin: 0 0 5px; letter-spacing: -0.02em; }
+                .ncv-sub     { font-size: 14px; color: var(--text-secondary); margin: 0 0 28px; }
+                .ncv-content { max-width: 1000px; margin: 0 auto; padding: 24px 32px 64px; }
+                .ncv-dropzone { background: var(--bg); border: 2px dashed var(--border); border-radius: 14px; padding: 72px 32px; display: flex; flex-direction: column; align-items: center; gap: 16px; cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
+                .ncv-dropzone:hover, .ncv-dropzone.over { border-color: var(--accent); background: var(--accent-muted); }
+                .ncv-drop-icon  { width: 52px; height: 52px; border-radius: 12px; background: var(--accent-muted); display: flex; align-items: center; justify-content: center; }
+                .ncv-drop-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 0; }
+                .ncv-drop-sub   { font-size: 13.5px; color: var(--text-secondary); margin: 0; }
+                .ncv-badge      { font-size: 11px; font-weight: 700; background: var(--bg-alt); border: 1.5px solid var(--border); border-radius: 6px; padding: 4px 10px; color: var(--text-secondary); letter-spacing: .04em; }
+                .ncv-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+                .ncv-add-header-btn { display: flex; align-items: center; gap: 6px; background: transparent; color: #475569; border: 1.5px solid #64748B; border-radius: 9999px; padding: 7px 16px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s, border-color 0.13s, color 0.13s; }
+                .ncv-add-header-btn:hover { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+                .ncv-comp-chip { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid #64748B; border-radius: 9999px; padding: 4px 10px; background: var(--bg); }
+                .ncv-comp-input  { width: 110px; font-size: 12px; background: none; border: none; outline: none; color: var(--text); font-family: inherit; }
+                .ncv-comp-add    { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-muted); color: var(--accent); border: 1.5px solid var(--accent-light); border-radius: 9999px; padding: 5px 13px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
+                .ncv-comp-add:hover { background: var(--accent-light); }
+                .ncv-comp-remove { background: none; border: none; cursor: pointer; color: #94A3B8; display: flex; align-items: center; padding: 0; transition: color 0.13s; }
+                .ncv-comp-remove:hover { color: var(--error); }
+                .ncv-skill-req { background: var(--error-light); color: var(--error); border: 1px solid rgba(220,38,38,0.25); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+                .ncv-skill-opt { background: #FFFBEB; color: #92400E; border: 1px solid rgba(217,119,6,0.3); border-radius: 9999px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+                .ncv-info-cell    { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+                .ncv-cell-label   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 0 0 4px; }
+                .ncv-cell-value   { font-size: 13.5px; font-weight: 600; color: var(--text); margin: 0; }
+                .ncv-btn-primary { display: flex; align-items: center; gap: 7px; background: var(--accent); color: #fff; border: none; border-radius: 9999px; padding: 11px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+                .ncv-btn-primary:hover { background: var(--accent-hover); }
+                .ncv-btn-secondary { display: flex; align-items: center; gap: 7px; background: var(--bg); color: var(--accent); border: 1.5px solid #64748B; border-radius: 9999px; padding: 11px 22px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+                .ncv-btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-muted); }
+                .ncv-btn-gen { display: flex; align-items: center; gap: 7px; background: #16A34A; color: #fff; border: none; border-radius: 9999px; padding: 11px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+                .ncv-btn-gen:hover { background: #15803D; }
+                .ncv-toast { position: fixed; top: 20px; right: 20px; z-index: 999; background: #16A34A; color: #fff; border-radius: 10px; padding: 13px 22px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.15); animation: ncvFadeIn 0.2s ease; }
+                @keyframes ncvFadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+                .ncv-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+                .ncv-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                .ncv-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+                .ncv-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
                 @media (max-width: 768px) {
                     .ncv-header, .ncv-content { padding-left: 20px; padding-right: 20px; }
                     .ncv-grid-3, .ncv-grid-2  { grid-template-columns: 1fr; }
@@ -562,27 +407,22 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                 }
             `}</style>
 
-            {/* Affiche le toast de confirmation si un message est présent */}
             {toast && <div className="ncv-toast">{toast}</div>}
 
-            {/* ── Conteneur principal de la page ── */}
             <div className="ncv-root">
-                {/* Barre de navigation avec statut connecté */}
                 <Navbar connected accessToken={accessToken} setAccessToken={setAccessToken} />
 
-                {/* ── En-tête de la page avec titre et description ── */}
                 <div className="ncv-header">
-                    <p className="ncv-eyebrow"><Icon d={ICONS.file} size={13} />Nouveau CV</p> {/* Sur-titre avec icône */}
-                    <h1 className="ncv-h1">Créer un nouveau CV</h1> {/* Titre principal */}
-                    <p className="ncv-sub">Importez votre CV, vérifiez les données, collez une offre — l'IA génère le reste.</p> {/* Description */}
+                    <p className="ncv-eyebrow"><Icon d={ICONS.file} size={13} />Nouveau CV</p>
+                    <h1 className="ncv-h1">Créer un nouveau CV</h1>
+                    <p className="ncv-sub">Importez votre CV, vérifiez les données, collez une offre — l'IA génère le reste.</p>
                 </div>
 
-                {/* ── Zone de contenu avec le stepper et les étapes ── */}
                 <div className="ncv-content">
-                    <Stepper step={step} /> {/* Indicateur visuel de l'étape actuelle */}
+                    <Stepper step={step} />
 
                     {/* ══ STEP 1 : Import CV — zone de drag & drop + option skip ══ */}
-                    {step === 1 && (loading ? <Spinner msg="Analyse du CV en cours…" /> : ( /* Spinner ou zone de dépôt */
+                    {step === 1 && (loading ? <Spinner msg="Analyse du CV en cours…" /> : (
                         <>
                             <div className={`ncv-dropzone${dragOver ? ' over' : ''}`}
                                 onClick={() => inputRef.current.click()}
@@ -597,14 +437,23 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <span className="ncv-badge">PDF uniquement</span>
                             </div>
 
-
+                            {/* Bouton "Passer l'import" si l'utilisateur a déjà un profil enregistré */}
+                            {hasProfile && (
+                                <div style={{ textAlign: 'center', marginTop: 24 }}>
+                                    <p style={{ fontSize: 13, color: theme.textSecondary, margin: '0 0 12px' }}>
+                                        Vous avez déjà un profil enregistré
+                                    </p>
+                                    <button className="ncv-btn-secondary" onClick={() => setStep(3)}>
+                                        <Icon d={ICONS.skip} size={14} /> Passer l'import
+                                    </button>
+                                </div>
+                            )}
                         </>
                     ))}
 
-                    {/* ══ STEP 2 : Édition du profil — formulaires pour chaque section ══ */}
+                    {/* ══ STEP 2 : Édition du profil ══ */}
                     {step === 2 && (
                         <>
-                            {/* Informations personnelles */}
                             <Card>
                                 <SectionTitle icon="user" label="Informations personnelles" />
                                 <div className="ncv-grid-3">
@@ -615,11 +464,9 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <FieldTextarea label="Résumé professionnel" value={profil.resume} onChange={v => updateField('resume', v)} rows={3} placeholder="Décrivez brièvement votre profil…" />
                             </Card>
 
-                            {/* Expériences */}
                             <Card>
                                 <div className="ncv-section-header">
                                     <SectionTitle icon="brief" label="Expériences" />
-                                    {/* ✅ FIX image 2 : bouton Ajouter avec classe visible */}
                                     <button className="ncv-add-header-btn"
                                         onClick={() => addArrayItem('experiences', { titre:'',entreprise:'',duree:'',lieu:'',description:[] })}>
                                         <Icon d={ICONS.plus} size={12} color="currentColor" /> Ajouter
@@ -640,7 +487,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <AddBtn label="Ajouter une expérience" onClick={() => addArrayItem('experiences', { titre:'',entreprise:'',duree:'',lieu:'',description:[] })} />
                             </Card>
 
-                            {/* Formations */}
                             <Card>
                                 <div className="ncv-section-header">
                                     <SectionTitle icon="book" label="Formations" />
@@ -662,7 +508,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <AddBtn label="Ajouter une formation" onClick={() => addArrayItem('formations', { diplome:'',etablissement:'',annee:'' })} />
                             </Card>
 
-                            {/* Compétences */}
                             <Card>
                                 <div className="ncv-section-header">
                                     <SectionTitle icon="tool" label="Compétences" />
@@ -675,7 +520,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                     <SubCard key={ci}>
                                         <RemoveBtn onClick={() => removeArrayItem('competences', ci)} />
                                         <FieldInput label="Catégorie" value={comp.categorie} onChange={v => updateArrayItem('competences', ci, 'categorie', v)} />
-                                        {/* ✅ FIX image 3 : chips avec border #64748B visible */}
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
                                             {(comp.elements || []).map((el, ei) => (
                                                 <span key={ei} className="ncv-comp-chip">
@@ -695,7 +539,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <AddBtn label="Ajouter une catégorie" onClick={() => addArrayItem('competences', { categorie:'', elements:[] })} />
                             </Card>
 
-                            {/* Projets */}
                             <Card>
                                 <div className="ncv-section-header">
                                     <SectionTitle icon="folder" label="Projets" />
@@ -715,7 +558,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <AddBtn label="Ajouter un projet" onClick={() => addArrayItem('projets', { nom:'',description:[],technologies:[] })} />
                             </Card>
 
-                            {/* Langues */}
                             <Card>
                                 <div className="ncv-section-header">
                                     <SectionTitle icon="globe" label="Langues" />
@@ -739,7 +581,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <AddBtn label="Ajouter une langue" onClick={() => addArrayItem('langues', { nom:'', niveau:'' })} />
                             </Card>
 
-                            {/* Actions step 2 */}
                             <div className="ncv-actions">
                                 <button className="ncv-btn-secondary" onClick={() => setStep(1)}>
                                     ← Réimporter
@@ -806,7 +647,7 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                         </>
                     )}
 
-                    {/* ══ STEP 4 : Affichage du CV/lettre généré(e) avec options ══ */}
+                    {/* ══ STEP 4 : Affichage du CV/lettre généré(e) ══ */}
                     {step === 4 && (
                         <Card>
                             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
@@ -827,7 +668,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 ) : (
                                     <p style={{ color: theme.textSecondary, fontSize: 14 }}>Aucun aperçu à afficher</p>
                                 )}
-                                {/* ✅ FIX image 4 : boutons avec bon contraste */}
                                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
                                     <button className="ncv-btn-secondary" onClick={() => { setStep(1); setHtmlCv(null); setHtmlLettre(null); setShowLettre(false); setTexteOffre(''); setAnalyse(null); }}>
                                         <Icon d={ICONS.refresh} size={14} color="currentColor" /> Nouveau CV
@@ -847,5 +687,3 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
         </>
     );
 };
-
-export default Page_nouveau_cv; // Export par défaut du composant
