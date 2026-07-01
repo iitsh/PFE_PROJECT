@@ -687,3 +687,5 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
         </>
     );
 };
+
+export default Page_nouveau_cv;
