@@ -1,0 +1,52 @@
+<!-- Document HTML5 principal de l'application CV Generator -->
+<!doctype html>
+<!-- Langue de la page définie en anglais -->
+<html lang="en">
+  <head>
+    <!-- Encodage des caractères en UTF-8 (support des accents, emojis) -->
+    <meta charset="UTF-8" />
+
+    <!-- Politique de sécurité du contenu (CSP) : restreint les sources autorisées -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   script-src 'self';
+                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                   font-src 'self' https://fonts.gstatic.com;
+                   img-src 'self' data:;
+                   connect-src 'self' http://localhost:8000;
+                   frame-src 'self' blob:;
+                   frame-ancestors 'self';
+                   base-uri 'self';
+                   form-action 'self';" />
+    <!-- default-src 'self' : par défaut, charge uniquement depuis le même domaine -->
+    <!-- script-src 'self' : scripts JS uniquement locaux (pas de CDN externe) -->
+    <!-- style-src : autorise les styles inline et Google Fonts -->
+    <!-- font-src : autorise les polices depuis Google Fonts -->
+    <!-- img-src : autorise les images locales et les data URIs (base64) -->
+    <!-- connect-src : autorise les requêtes API vers le backend localhost:8000 -->
+    <!-- frame-src : autorise les iframes locaux et blob: (pour l'aperçu CV) -->
+    <!-- frame-ancestors : empêche l'embedding dans d'autres sites (anti-clickjacking) -->
+    <!-- base-uri : empêche l'injection de balises <base> -->
+    <!-- form-action : limite les soumissions de formulaire au même domaine -->
+
+    <!-- Icône du site affichée dans l'onglet du navigateur -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Pré-connexion aux serveurs Google Fonts pour accélérer le chargement -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Viewport responsive : adapte la largeur à l'écran de l'appareil -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Titre affiché dans l'onglet du navigateur -->
+    <title>CV Generator</title>
+  </head>
+  <body>
+    <!-- Conteneur racide React : l'application sera injectée ici par JavaScript -->
+    <div id="root"></div>
+
+    <!-- Point d'entrée de l'application React (chargé comme module ES) -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

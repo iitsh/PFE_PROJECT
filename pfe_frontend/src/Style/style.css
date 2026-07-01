@@ -1,0 +1,223 @@
+/* ── Conteneur de la page d'authentification (connexion/inscription) ── */
+.auth-page-wrapper, .auth-container {
+    display: flex;
+    justify-content: center; /* Centre horizontalement */
+    align-items: center; /* Centre verticalement */
+    min-height: 100vh; /* Pleine hauteur d'écran */
+    background: var(--bg-alt, #F8FAFC); /* Fond alternatif gris clair */
+    font-family: 'Geist', system-ui, -apple-system, sans-serif; /* Police Geist */
+    padding: 20px; /* Espacement sur mobile */
+    box-sizing: border-box;
+}
+
+/* ── Carte principale : bordure uniquement, pas d'ombre fantôme ── */
+.auth-card, .auth-scroll-content {
+    background-color: var(--bg, #FFFFFF); /* Fond blanc */
+    width: 100%;
+    max-width: 480px; /* Largeur max de la carte */
+    border-radius: var(--radius-md, 10px); /* Coins arrondis moyens */
+    border: 1px solid var(--border, #E2E8F0); /* Bordure grise claire */
+    padding: 40px; /* Espacement interne généreux */
+    box-sizing: border-box;
+}
+
+/* ── En-tête de la carte d'authentification ── */
+.auth-header, .auth-header-container {
+    text-align: left; /* Aligné à gauche */
+    margin-bottom: 32px; /* Espacement avant le formulaire */
+}
+
+/* Titre principal de la carte */
+.auth-header h1, .auth-title {
+    font-size: 1.75rem; /* 28px */
+    font-weight: 700; /* Gras */
+    color: var(--text, #0F172A);
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em; /* Espacement légèrement serré */
+}
+
+/* Sous-titre descriptif */
+.auth-header p, .auth-subtitle {
+    font-size: var(--fs-small, 0.875rem); /* 14px */
+    color: var(--text-secondary, #475569);
+    margin: 0;
+}
+
+/* ── Layout du formulaire : flex en colonne ── */
+.auth-form-container, .auth-scroll-content {
+    display: flex;
+    flex-direction: column; /* Champs empilés verticalement */
+    gap: 16px; /* Espacement entre les champs */
+}
+
+/* ── Rangée de champs (nom + prénom côte à côte) ── */
+.auth-row, .auth-row-container {
+    display: flex;
+    gap: 16px; /* Espacement entre les deux champs */
+    width: 100%;
+}
+
+/* ── Groupe de saisie : label + input ── */
+.auth-input-group, .auth-champ-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+/* Champ demi-largeur (dans une rangée de 2) */
+.auth-input-group.half, .half-width {
+    width: 50%;
+}
+
+/* ── Labels au-dessus de l'input (pattern correct) ── */
+.auth-input-group label, .auth-label {
+    font-size: var(--fs-small, 0.875rem); /* 14px */
+    font-weight: 600; /* Semi-gras */
+    color: var(--text-secondary, #475569);
+    margin-bottom: 6px; /* Espacement sous le label */
+    display: block;
+}
+
+/* ── Inputs : rayon 6px, bon contraste, pas de placeholder-label ── */
+.auth-input-group input, .auth-input {
+    width: 100%;
+    padding: 10px 14px; /* Espacement confortable */
+    border: 1.5px solid var(--border, #E2E8F0); /* Bordure grise */
+    border-radius: var(--radius-sm, 6px); /* Coins légèrement arrondis */
+    font-size: var(--fs-body, 1rem); /* 16px */
+    color: var(--text, #0F172A);
+    background: var(--bg, #FFFFFF);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease; /* Transitions douces */
+    box-sizing: border-box;
+    font-family: inherit; /* Hérite de la police parente */
+}
+
+/* ── Placeholder : contraste ≥ 4.5:1 (pas de gris trop clair) ── */
+.auth-input-group input::placeholder, .auth-input::placeholder {
+    color: var(--text-muted, #94A3B8);
+}
+
+/* ── Focus : anneau bleu accent de 3px ── */
+.auth-input-group input:focus, .auth-input:focus {
+    outline: none; /* Supprime l'outline par défaut */
+    border-color: var(--accent, #2563EB); /* Bordure bleue */
+    box-shadow: 0 0 0 3px var(--accent-light, rgba(37, 99, 235, 0.15)); /* Halo bleu */
+}
+
+/* ── Inputs en erreur : bordure rouge ── */
+.auth-input-group input.input-error, .auth-input-erreur {
+    border-color: var(--error, #DC2626) !important; /* Rouge forcé */
+}
+
+/* Focus sur champ en erreur : halo rouge */
+.auth-input-group input.input-error:focus, .auth-input-erreur:focus {
+    box-shadow: 0 0 0 3px var(--error-light, rgba(220, 38, 38, 0.12));
+}
+
+/* ── Message d'erreur sous le champ ── */
+.error-message, .auth-texte-erreur {
+    color: var(--error, #DC2626);
+    font-size: var(--fs-caption, 0.75rem); /* 12px */
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* ── Bouton de soumission : fond accent uni, pas de gradient ── */
+.auth-submit-btn, .auth-bouton {
+    width: 100%; /* Pleine largeur */
+    background: var(--accent, #2563EB); /* Fond bleu accent */
+    color: #FFFFFF; /* Texte blanc */
+    border: none; /* Pas de bordure */
+    border-radius: var(--radius-md, 10px); /* Coins moyens */
+    padding: 12px 20px;
+    font-size: var(--fs-body, 1rem);
+    font-weight: 600; /* Semi-gras */
+    cursor: pointer; /* Curseur pointer */
+    transition: background 0.15s ease; /* Transition sur le fond */
+    margin-top: 8px;
+    display: flex;
+    justify-content: center; /* Centre le contenu */
+    align-items: center;
+    font-family: inherit;
+}
+
+/* Hover : bleu plus foncé */
+.auth-submit-btn:hover, .auth-bouton:hover {
+    background: var(--accent-hover, #1D4ED8);
+}
+
+/* Clic : légère réduction */
+.auth-submit-btn:active, .auth-bouton:active {
+    transform: scale(0.98);
+}
+
+/* ── Pied de page du formulaire d'auth ── */
+.auth-footer {
+    text-align: center;
+    font-size: var(--fs-small, 0.875rem); /* 14px */
+    color: var(--text-secondary, #475569);
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border, #E2E8F0); /* Séparateur en haut */
+}
+
+/* ── Boîte d'alerte d'erreur ── */
+.auth-alert-error {
+    background-color: var(--error-light, #FEF2F2); /* Fond rouge clair */
+    border: 1px solid var(--error, rgba(220, 38, 38, 0.2)); /* Bordure rouge */
+    color: var(--error, #DC2626);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: var(--fs-small, 0.875rem);
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+/* Texte dans le footer */
+.auth-footer-text {
+    margin-bottom: 8px;
+    color: var(--text-secondary, #475569);
+}
+
+/* ── Liens dans le formulaire d'auth ── */
+.auth-link, .auth-link-bouton {
+    color: var(--accent, #2563EB); /* Bleu accent */
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none; /* Pas de soulignement */
+    background: none;
+    border: none;
+    font-size: var(--fs-small, 0.875rem);
+    font-family: inherit;
+    padding: 0;
+}
+
+/* Hover : bleu plus foncé */
+.auth-link:hover, .auth-link-bouton:hover {
+    color: var(--accent-hover, #1D4ED8);
+}
+
+/* ── Utilitaire : marge en haut ── */
+.mt-4 {
+    margin-top: 16px;
+}
+
+/* ── Responsive mobile (< 480px) ── */
+@media (max-width: 480px) {
+    /* Rangées en colonne sur mobile */
+    .auth-row, .auth-row-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Champs demi-largeur en pleine largeur sur mobile */
+    .auth-input-group.half, .half-width {
+        width: 100%;
+    }
+
+    /* Padding réduit dans la carte sur mobile */
+    .auth-card, .auth-scroll-content {
+        padding: 28px 20px;
+    }
+}

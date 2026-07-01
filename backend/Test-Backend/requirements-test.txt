@@ -1,0 +1,37 @@
+# Minimal dependencies for CI backend tests
+# Only what's needed to import modules (IA/DB/PDF calls are mocked)
+
+# Web framework
+fastapi==0.115.12
+uvicorn==0.34.3
+starlette==0.46.2
+
+# Database
+psycopg2-binary==2.9.10
+
+# Authentication
+PyJWT==2.10.1
+passlib==1.7.4
+bcrypt==4.3.0
+python-multipart==0.0.20
+tzdata==2025.2
+
+# IA / LLM (needed for cv_pipeline.py import)
+google-generativeai==0.8.5
+groq==0.28.0
+openai==1.84.0
+
+# PDF
+pdfplumber==0.11.7
+
+# Template & utils
+jinja2==3.1.6
+python-dotenv==1.1.0
+pydantic==2.11.5
+
+# Tests
+pytest==8.4.0
+httpx==0.28.1
+
+# Browser automation (needed for cv_pipeline.py import)
+playwright==1.52.0

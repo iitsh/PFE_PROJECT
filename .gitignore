@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+backend/output/
+
+# Node
+pfe_frontend/node_modules/
+pfe_frontend/dist/
+
+# Archives
+*.zip
+
+# IDE
+.vscode/
+.idea/

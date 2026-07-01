@@ -1,0 +1,55 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Pipeline CI/CD — CV Generator (PFE)
+#  Exécute les tests frontend et backend automatiquement à chaque push
+# ══════════════════════════════════════════════════════════════════════════════
+
+stages:
+  - test
+
+# ── Tests Frontend (Vitest) ──────────────────────────────────────────────────
+frontend-tests:
+  stage: test
+  image: node:20
+
+  # Cache node_modules pour accélérer les prochains runs
+  cache:
+    key: frontend-deps
+    paths:
+      - pfe_frontend/node_modules/
+
+  before_script:
+    - cd pfe_frontend
+    - npm install
+
+  script:
+    # 1. Vérifier que le build passe
+    - npx vite build
+    # 2. Lancer tous les tests automatisés depuis le dossier Test Frontend
+    - npx vitest run --config vite.config.js
+
+  # Ce job se déclenche à chaque push sur toutes les branches
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+# ── Tests Backend (pytest) ───────────────────────────────────────────────────
+backend-tests:
+  stage: test
+  image: python:3.12
+
+  # Cache pip pour accélérer les prochains runs
+  cache:
+    key: backend-deps
+    paths:
+      - .cache/pip/
+
+  before_script:
+    - cd backend
+    - pip install -r "Test-Backend/requirements-test.txt"
+
+  script:
+    # Lancer tous les tests backend (auth + cv)
+    - python -m pytest "Test-Backend/test_auth.py" "Test-Backend/test_cv.py" -v
+
+  # Ce job se déclenche à chaque push sur toutes les branches
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"

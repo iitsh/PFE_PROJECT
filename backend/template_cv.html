@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>CV {{ nom }} {{ prenom }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        html, body {
+            width: 210mm;
+            height: 297mm;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        .cv-container {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            height: 297mm;
+            max-height: 297mm;
+        }
+
+        /* --- COLONNE GAUCHE --- */
+        .col-left {
+            width: 40%;
+            background-color: #0f344a !important;
+            height: 297mm;
+            max-height: 297mm;
+            overflow: hidden;
+            color: white !important;
+            padding: 20px 15px;       /* était 30px 20px → économise ~20px haut/bas */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;                /* était 20px → économise ~8px entre sections */
+        }
+
+        .header h1 {
+            font-family: 'Georgia', serif;
+            font-size: 22px;          /* était 24px */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 3px;       /* était 5px */
+            color: white !important;
+        }
+
+        .header h2 {
+            font-size: 12px;          /* était 13px */
+            font-weight: 400;
+            margin-bottom: 10px;      /* était 20px → économise 10px */
+            line-height: 1.3;         /* était 1.4 */
+            color: #d1e8fa !important;
+        }
+
+        .contact-info {
+            list-style-type: none;
+            font-size: 11px;
+            line-height: 1.6;         /* était 1.8 */
+            margin-bottom: 3px;       /* était 5px */
+        }
+
+        .contact-info li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;       /* était 6px → économise 3px par contact */
+        }
+
+        .contact-info i {
+            width: 18px;              /* était 20px */
+            text-align: center;
+            margin-right: 6px;        /* était 8px */
+            font-size: 11px;          /* était 12px */
+            color: white !important;
+        }
+
+        .contact-info a {
+            color: white !important;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        /* Titre Section Gauche */
+        .section-left-title {
+            background-color: #1a4a68 !important;
+            color: white !important;
+            text-align: center;
+            padding: 5px;             /* était 6px */
+            font-size: 12px;          /* était 13px */
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 4px;
+            margin-bottom: 8px;       /* était 15px → économise 7px par section */
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;                 /* était 8px */
+        }
+
+        .section-content {
+            font-size: 11px;
+            line-height: 1.4;         /* était 1.5 */
+            text-align: justify;
+        }
+
+        /* Langues */
+        .langue-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;       /* était 5px */
+        }
+
+        /* Formation & Experience Gauche */
+        .item-bloc {
+            margin-bottom: 8px;       /* était 15px → économise 7px par item */
+        }
+        .item-bloc strong {
+            display: block;
+            font-size: 12px;          /* était 13px */
+            margin-bottom: 1px;       /* était 2px */
+            color: white !important;
+        }
+        .item-bloc .subtitle {
+            font-style: italic;
+            margin-bottom: 3px;       /* était 4px */
+            display: block;
+            font-size: 11px;
+            color: #b5d5ec !important;
+        }
+
+        /* Listes */
+        ul {
+            padding-left: 13px;       /* était 15px */
+        }
+        ul li {
+            margin-bottom: 2px;       /* était 4px → économise 2px par bullet */
+        }
+
+        /* --- COLONNE DROITE --- */
+        .col-right {
+            width: 60%;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            height: 297mm;
+            max-height: 297mm;
+            overflow: hidden;
+            padding: 20px 20px;       /* était 30px 25px → économise ~20px haut/bas */
+        }
+
+        .section-right-title {
+            background-color: #ededed !important;
+            color: #000000 !important;
+            text-align: center;
+            padding: 5px;             /* était 6px */
+            font-size: 12px;          /* était 13px */
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 4px;
+            margin-bottom: 8px;       /* était 15px → économise 7px par section */
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .right-item-bloc {
+            margin-bottom: 12px;      /* était 20px → économise 8px par item (5-8 items = 40-64px) */
+            font-size: 12px;
+            line-height: 1.4;         /* était 1.5 */
+        }
+
+        .right-item-bloc strong {
+            font-size: 13px;          /* était 14px */
+            display: block;
+            margin-bottom: 1px;       /* était 2px */
+            color: #0f344a !important;
+        }
+
+        .right-item-bloc .subtitle2 {
+            font-size: 11px;
+            color: #555 !important;
+            margin-bottom: 5px;       /* était 8px */
+            display: block;
+            font-style: italic;
+        }
+
+        .technos {
+            color: #1a4a68 !important;
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 3px;          /* était 5px */
+            display: block;
+        }
+
+        /* ── Tightening progressif injecté dynamiquement ── */
+        /* Ces classes sont surchargées depuis Python si plateau persistant */
+    </style>
+
+    <!-- TIGHTENING_PLACEHOLDER -->
+</head>
+<body>
+
+<div class="cv-container">
+
+    <!-- COLONNE GAUCHE -->
+    <div class="col-left">
+        <div class="header">
+            <h1>{{ nom }} {{ prenom }}</h1>
+            <h2>{% if job_title %}{{ job_title }}{% else %}Expert IA & Logiciel{% endif %}</h2>
+
+            <ul class="contact-info">
+                {% if email %}<li><i class="fa fa-envelope"></i> <a href="mailto:{{ email }}" target="_blank" rel="noopener noreferrer">{{ email }}</a></li>{% endif %}
+                {% if telephone %}<li><i class="fa fa-phone"></i> <a href="tel:{{ telephone }}" target="_blank" rel="noopener noreferrer">{{ telephone }}</a></li>{% endif %}
+                {% if ville %}<li><i class="fa fa-map-marker-alt"></i> {{ ville }}</li>{% endif %}
+                {% if linkedin %}
+                    {% set linkedin_url = linkedin if linkedin.startswith('http') else 'https://' ~ linkedin %}
+                    <li><i class="fab fa-linkedin"></i> <a href="{{ linkedin_url }}" target="_blank" rel="noopener noreferrer">{{ linkedin | replace('https://', '') | replace('http://', '') }}</a></li>
+                {% endif %}
+                {% if github %}
+                    {% set github_url = github if github.startswith('http') else 'https://' ~ github %}
+                    <li><i class="fab fa-github"></i> <a href="{{ github_url }}" target="_blank" rel="noopener noreferrer">{{ github | replace('https://', '') | replace('http://', '') }}</a></li>
+                {% endif %}
+                {% if portfolio %}
+                    {% set portfolio_url = portfolio if portfolio.startswith('http') else 'https://' ~ portfolio %}
+                    <li><i class="fa fa-globe"></i> <a href="{{ portfolio_url }}" target="_blank" rel="noopener noreferrer">{{ portfolio | replace('https://', '') | replace('http://', '') }}</a></li>
+                {% endif %}
+            </ul>
+        </div>
+
+        {% if competences %}
+        <div class="section-left">
+            <div class="section-left-title"><i class="fa fa-brain"></i> COMPÉTENCES</div>
+            <div class="section-content">
+                {% if competences is string %}
+                    <p>{{ competences }}</p>
+                {% else %}
+                    {% for group in competences %}
+                        {% if group is string %}
+                            <ul><li>{{ group }}</li></ul>
+                        {% else %}
+                            <div class="item-bloc" style="margin-bottom: 6px;">
+                                <strong>{{ group.get('categorie', 'Compétences') }}</strong>
+                                <ul>
+                                    {% if group.get('elements') is string %}
+                                        <li>{{ group.get('elements') }}</li>
+                                    {% elif group.get('elements') %}
+                                        {% for elem in group.elements %}
+                                            <li>{{ elem }}</li>
+                                        {% endfor %}
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if langues %}
+        <div class="section-left">
+            <div class="section-left-title"><i class="fa fa-globe"></i> LANGUES</div>
+            <div class="section-content">
+                {% if langues is string %}
+                    {{ langues }}
+                {% else %}
+                    {% for langue in langues %}
+                    <div class="langue-item">
+                        {% if langue is string %}
+                            <span>{{ langue }}</span>
+                        {% else %}
+                            <span>{{ langue.get('nom', langue.get('langue', '')) }}</span>
+                            <span>{{ langue.get('niveau', '') }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- COLONNE DROITE -->
+    <div class="col-right">
+        {% if resume %}
+        <div class="section-right-title"><i class="fa fa-user"></i> PROFIL</div>
+        <div class="right-item-bloc" style="text-align: justify;">{{ resume }}</div>
+        {% endif %}
+
+        {% if experiences %}
+        <div class="section-right-title"><i class="fa fa-briefcase"></i> EXPÉRIENCE</div>
+        <div>
+            {% for exp in experiences %}
+            <div class="right-item-bloc">
+                {% if exp is string %}
+                    <strong>{{ exp }}</strong>
+                {% else %}
+                    <strong>{{ exp.get('titre', exp.get('poste', exp.get('role', ''))) }}</strong>
+                    <span class="subtitle2">{{ exp.get('entreprise', '') }} | {{ exp.get('duree', exp.get('date', '')) }}</span>
+                    {% if exp.get('description') %}
+                        <ul>
+                        {% if exp.description is string %}
+                            <li>{{ exp.description }}</li>
+                        {% else %}
+                            {% for d in exp.description %}
+                                {% if d is string %}<li>{{ d }}</li>{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        </ul>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if formations %}
+        <div class="section-right-title"><i class="fa fa-graduation-cap"></i> FORMATION</div>
+        <div>
+            {% for form in formations %}
+            <div class="right-item-bloc">
+                {% if form is string %}
+                    <strong>{{ form }}</strong>
+                {% else %}
+                    <strong>{{ form.get('diplome', form.get('titre', '')) }}</strong>
+                    <span class="subtitle2">{{ form.get('etablissement', form.get('ecole', '')) }} | {{ form.get('annee', form.get('duree', '')) }}</span>
+                    {% if form.get('description') %}
+                        <ul>
+                        {% if form.description is string %}
+                            <li>{{ form.description }}</li>
+                        {% else %}
+                            {% for d in form.description %}
+                                {% if d is string %}<li>{{ d }}</li>{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        </ul>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if projets %}
+        <div class="section-right-title"><i class="fa fa-folder-open"></i> PROJETS</div>
+        <div>
+            {% for projet in projets %}
+            <div class="right-item-bloc">
+                {% if projet is string %}
+                    <strong>{{ projet }}</strong>
+                {% else %}
+                    <strong>{{ projet.get('nom', '') }}</strong>
+                    {% if projet.get('lien') %}
+                        {% set plien = projet.get('lien') %}
+                        {% set plien_url = plien if plien.startswith('http') else 'https://' ~ plien %}
+                        <a href="{{ plien_url }}" target="_blank" rel="noopener noreferrer" style="color: #1a4a68; font-size: 10px; text-decoration: underline;">
+                            {{ plien | replace('https://', '') | replace('http://', '') }}
+                        </a>
+                    {% endif %}
+                    {% if projet.get('description') %}
+                        <ul>
+                        {% if projet.description is string %}
+                            <li>{{ projet.description }}</li>
+                        {% else %}
+                            {% for p_desc in projet.description %}
+                                {% if p_desc is string %}<li>{{ p_desc }}</li>{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        </ul>
+                    {% endif %}
+                    {% if projet.get('technologies') %}
+                        <span class="technos">Technos:
+                        {% if projet.technologies is string %}
+                            {{ projet.technologies }}
+                        {% else %}
+                            {{ projet.technologies | join(', ') }}
+                        {% endif %}
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Script pour forcer l'ouverture des liens dans un nouvel onglet (même depuis un iframe) -->
+<script>
+document.addEventListener('click', function(e) {
+    var link = e.target.closest('a');
+    if (link && link.href) {
+        e.preventDefault();
+        window.open(link.href, '_blank', 'noopener,noreferrer');
+    }
+});
+</script>
+
+</body>
+</html>

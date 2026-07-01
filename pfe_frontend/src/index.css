@@ -1,0 +1,115 @@
+/* Import de la police Google Fonts : Geist (sans-serif) et Geist Mono (monospace) */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ════════════════════════════════════════════════════════════════════════════
+   *  Les tokens de design (couleurs, rayons, ombres, tailles) sont définis
+   *  dans theme.js et injectés automatiquement en CSS par main.jsx.
+   *  Ici : uniquement les propriétés globales qui ne sont pas des tokens.
+   * ════════════════════════════════════════════════════════════════════════════ */
+
+  /* ── Propriétés globales appliquées à :root ── */
+  font-family: var(--sans); /* Police par défaut (vient de theme.js → --sans) */
+  font-size: var(--fs-body); /* Taille de base 16px (vient de theme.js → --fs-body) */
+  line-height: 1.6; /* Hauteur de ligne confortable */
+  color-scheme: light dark; /* Support des modes clair et sombre */
+  color: var(--text); /* Couleur de texte par défaut (vient de theme.js) */
+  background: var(--bg); /* Fond par défaut (vient de theme.js) */
+  font-synthesis: none; /* Pas de synthèse de police */
+  text-rendering: optimizeLegibility; /* Optimise la lisibilité */
+  -webkit-font-smoothing: antialiased; /* Anti-aliasing WebKit */
+  -moz-osx-font-smoothing: grayscale; /* Anti-aliasing Firefox */
+
+  /* Taille de base réduite en tablette */
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+/* Le mode sombre est géré par main.jsx + darkTheme dans theme.js */
+/* Il détecte prefers-color-scheme: dark et applique les overrides automatiquement */
+
+/* ── Reset CSS : box-sizing uniforme ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box; /* Inclut padding et border dans la largeur */
+}
+
+/* Supprime la marge par défaut du body */
+body {
+  margin: 0;
+}
+
+/* ── Conteneur racine de l'application ── */
+#root {
+  width: 1126px; /* Largeur fixe du contenu */
+  max-width: 100%; /* Ne dépasse pas l'écran */
+  margin: 0 auto; /* Centre horizontalement */
+  border-inline: 1px solid var(--border); /* Bordures latérales */
+  min-height: 100svh; /* Hauteur minimale = viewport */
+  display: flex;
+  flex-direction: column; /* Layout en colonne */
+}
+
+/* ── Typographie des titres ── */
+h1, h2, h3, h4 {
+  font-family: var(--heading); /* Police des titres (vient de theme.js) */
+  color: var(--text); /* Couleur du texte (vient de theme.js) */
+  text-wrap: balance; /* Équilibre les lignes */
+}
+
+/* Titre de niveau 1 */
+h1 {
+  font-size: var(--fs-h1); /* 2.5rem = 40px (vient de theme.js) */
+  font-weight: 700; /* Gras */
+  letter-spacing: -0.02em; /* Espacement négatif */
+  line-height: 1.15; /* Hauteur de ligne serrée */
+  margin: 0 0 16px;
+  @media (max-width: 1024px) {
+    font-size: 2rem; /* Réduit en tablette */
+  }
+}
+
+/* Titre de niveau 2 */
+h2 {
+  font-size: var(--fs-h2); /* 1.75rem = 28px (vient de theme.js) */
+  font-weight: 600; /* Semi-gras */
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  @media (max-width: 1024px) {
+    font-size: 1.5rem; /* Réduit en tablette */
+  }
+}
+
+/* Titre de niveau 3 */
+h3 {
+  font-size: var(--fs-h3); /* 1.25rem = 20px (vient de theme.js) */
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 8px;
+}
+
+/* Paragraphe : largeur max pour lisibilité */
+p {
+  margin: 0;
+  max-width: 65ch; /* 65 caractères max par ligne */
+}
+
+/* ── Code inline et compteur ── */
+code,
+.counter {
+  font-family: var(--mono); /* Police monospace (vient de theme.js) */
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+/* Style spécifique pour le code inline */
+code {
+  font-size: 0.88em; /* Légèrement plus petit */
+  line-height: 1.35;
+  padding: 4px 8px; /* Petit padding */
+  background: var(--accent-muted); /* Fond d'accent léger (vient de theme.js) */
+}

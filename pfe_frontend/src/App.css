@@ -1,0 +1,211 @@
+/* ── Compteur : bouton interactif avec effet hover ── */
+.counter {
+  font-size: 16px; /* Taille de police de base */
+  padding: 5px 10px; /* Espacement interne */
+  border-radius: 5px; /* Coins légèrement arrondis */
+  color: var(--accent); /* Couleur du texte = accent du thème */
+  background: var(--accent-bg); /* Fond avec couleur d'accent légère */
+  border: 2px solid transparent; /* Bordure transparente par défaut */
+  transition: border-color 0.3s; /* Transition douce sur la bordure */
+  margin-bottom: 24px; /* Espacement sous le compteur */
+
+  /* Au survol : bordure accent visible */
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  /* Au focus clavier : outline accent avec décalage */
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ── Section hero : mise en page des logos superposés ── */
+.hero {
+  position: relative; /* Positionnement relatif pour enfants absolus */
+
+  /* Logos centrés horizontalement */
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0; /* Ancre à gauche et à droite */
+    margin: 0 auto; /* Centre horizontalement */
+  }
+
+  /* Logo de base (React) */
+  .base {
+    width: 170px; /* Largeur fixe */
+    position: relative;
+    z-index: 0; /* Derrière les autres logos */
+  }
+
+  /* Logos framework et Vite en position absolue */
+  .framework,
+  .vite {
+    position: absolute; /* Superposés au logo de base */
+  }
+
+  /* Logo framework (React Router) avec rotation 3D */
+  .framework {
+    z-index: 1; /* Devant le logo de base */
+    top: 34px; /* Position verticale */
+    height: 28px; /* Hauteur fixe */
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4); /* Transformation 3D pour effet de profondeur */
+  }
+
+  /* Logo Vite avec rotation 3D */
+  .vite {
+    z-index: 0; /* Même niveau que la base */
+    top: 107px; /* Position verticale plus basse */
+    height: 26px; width: auto; /* Hauteur fixe, largeur auto */
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8); /* Transformation 3D plus petite */
+  }
+}
+
+/* ── Section centrale : contenu principal centré ── */
+#center {
+  display: flex;
+  flex-direction: column; /* Layout en colonne */
+  gap: 25px; /* Espacement entre les éléments */
+  place-content: center; /* Centre verticalement */
+  place-items: center; /* Centre horizontalement */
+  flex-grow: 1; /* Prend tout l'espace disponible */
+
+  /* Responsive tablette */
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px; /* Padding réduit */
+    gap: 18px; /* Espacement réduit */
+  }
+}
+
+/* ── Section "Prochaines étapes" : 2 colonnes avec bordure ── */
+#next-steps {
+  display: flex; /* Layout horizontal */
+  border-top: 1px solid var(--border); /* Séparateur en haut */
+  text-align: left; /* Texte aligné à gauche */
+
+  /* Chaque colonne prend un espace égal */
+  & > div {
+    flex: 1 1 0; /* Flex-grow = 1, flex-shrink = 1, base = 0 */
+    padding: 32px; /* Espacement interne */
+    @media (max-width: 1024px) {
+      padding: 24px 20px; /* Padding réduit en tablette */
+    }
+  }
+
+  /* Icône dans chaque colonne d'étape */
+  .icon {
+    margin-bottom: 16px;
+    width: 22px; height: 22px;
+  }
+
+  /* Responsive : colonnes empilées en tablette */
+  @media (max-width: 1024px) {
+    flex-direction: column; /* Passage en colonne */
+    text-align: center; /* Texte centré */
+  }
+}
+
+/* ── Section documentation : bordure droite ── */
+#docs {
+  border-right: 1px solid var(--border); /* Séparateur à droite */
+
+  /* En tablette : bordure en bas au lieu de droite */
+  @media (max-width: 1024px) {
+    border-right: none; /* Supprime la bordure droite */
+    border-bottom: 1px solid var(--border); /* Ajoute bordure en bas */
+  }
+}
+
+/* ── Liste des liens/réseaux sociaux ── */
+#next-steps ul {
+  list-style: none; /* Pas de puces */
+  padding: 0; /* Pas de padding */
+  display: flex; /* Layout horizontal */
+  gap: 8px; /* Espacement entre liens */
+  margin: 32px 0 0; /* Marge en haut */
+
+  /* Logo dans chaque lien */
+  .logo {
+    height: 18px; /* Hauteur fixe */
+  }
+
+  /* Style des liens individuels */
+  a {
+    color: var(--text-h); /* Couleur du texte */
+    font-size: 16px;
+    border-radius: 6px; /* Coins arrondis */
+    background: var(--social-bg); /* Fond des boutons sociaux */
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px; /* Espacement icône-texte */
+    text-decoration: none; /* Pas de soulignement */
+    transition: box-shadow 0.3s; /* Transition sur l'ombre */
+
+    /* Au survol : ombre portée */
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    /* Icône dans le bouton */
+    .button-icon {
+      height: 18px; width: 18px;
+    }
+  }
+
+  /* Responsive : liens en grille 2×2 */
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap; /* Retour à la ligne autorisé */
+    justify-content: center; /* Centre les liens */
+
+    /* Chaque lien prend 50% de la largeur */
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    /* Liens pleine largeur et centrés */
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+/* ── Espace vide en bas de page ── */
+#spacer {
+  height: 88px; /* Hauteur fixe */
+  border-top: 1px solid var(--border); /* Séparateur en haut */
+  @media (max-width: 1024px) {
+    height: 48px; /* Hauteur réduite en tablette */
+  }
+}
+
+/* ── Marqueurs de graduation (ticks) sur une ligne ── */
+.ticks {
+  position: relative;
+  width: 100%;
+
+  /* Pseudo-éléments pour les marqueurs gauche et droit */
+  &::before,
+  &::after {
+    content: ''; /* Contenu vide (juste pour le style) */
+    position: absolute;
+    top: -4.5px; /* Position verticale au-dessus de la ligne */
+    border: 5px solid transparent; /* Bordure triangulaire */
+  }
+
+  /* Marqueur gauche */
+  &::before {
+    left: 0; /* Aligné à gauche */
+    border-left-color: var(--border); /* Couleur uniquement à gauche */
+  }
+  /* Marqueur droit */
+  &::after {
+    right: 0; /* Aligné à droite */
+    border-right-color: var(--border); /* Couleur uniquement à droite */
+  }
+}
