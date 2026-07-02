@@ -1,13 +1,19 @@
+/**
+ * Tests unitaires pour la page d'accueil (Page_accueil.jsx).
+ * Utilise Vitest + React Testing Library avec jsdom.
+ * Couvre : affichage du hero et des étapes, compteur de CV générés,
+ *          navigation vers /nouveau-cv et /historique, appel API /api/cv/history.
+ */
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import Page_accueil from '../src/Screen/Page_accueil.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mocker l'API globale fetch pour éviter les vrais appels réseau
+// Mock global de fetch : empêche les vrais appels réseau vers le backend
 global.fetch = vi.fn();
 
-// Mock the useNavigate hook inside react-router-dom
+// Mock de useNavigate : permet de vérifier les redirections sans changer l'URL réelle
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');

@@ -1,3 +1,8 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Modèles Pydantic — profil candidat et analyse d'offre d'emploi
+#  Schémas partagés entre cv_pipeline.py (IA) et routes/cv.py (API REST)
+# ══════════════════════════════════════════════════════════════════════════════
+
 from pydantic import BaseModel, Field, field_validator
 # BeforeValidator = transforme une valeur AVANT que Pydantic ne la valide
 from pydantic.functional_validators import BeforeValidator

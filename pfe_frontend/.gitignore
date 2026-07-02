@@ -1,7 +1,12 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Fichiers ignorés par Git — Frontend React/Vite
+# ══════════════════════════════════════════════════════════════════════════════
 
+# Variables d'environnement locales (clés API, URLs backend personnalisées)
 .env
 *.env
-# Logs
+
+# ── Logs npm / yarn / pnpm ───────────────────────────────────────────────────
 logs
 *.log
 npm-debug.log*
@@ -10,14 +15,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ── Dépendances et build ─────────────────────────────────────────────────────
+node_modules      # paquets npm (régénérés par npm install)
+dist              # sortie de vite build
+dist-ssr          # build SSR si activé un jour
+*.local           # overrides Vite locaux (ex. vite.config.js.local)
 
-# Editor directories and files
+# ── IDE / éditeurs ───────────────────────────────────────────────────────────
 .vscode/*
-!.vscode/extensions.json
+!.vscode/extensions.json   # garde la liste d'extensions recommandées
 .idea
 .DS_Store
 *.suo

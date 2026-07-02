@@ -1,13 +1,19 @@
+/**
+ * Tests unitaires pour la page de connexion (Page_connexion.jsx).
+ * Utilise Vitest + React Testing Library avec jsdom.
+ * Couvre : validation email/mot de passe, politique de sécurité (pas de fuite d'info),
+ *          connexion réussie (token + redirection /accueil), erreurs backend.
+ */
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import Connexion from '../src/Screen/Page_connexion.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
-// Mocker l'API globale fetch pour éviter les vrais appels réseau
+// Mock global de fetch : simule POST /api/auth/login sans backend réel
 global.fetch = vi.fn();
 
-// Mock the useNavigate hook inside react-router-dom
+// Mock de useNavigate pour vérifier la redirection vers /accueil après login
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');

@@ -237,7 +237,6 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
     const [htmlLettre,  setHtmlLettre] = useState(null);
     const [showLettre,  setShowLettre] = useState(false);
     const [toast,       setToast]      = useState('');
-    const [hasProfile,  setHasProfile]  = useState(false);
     const analyseRef  = useRef(null);
     const generateRef = useRef(null);
 
@@ -252,23 +251,7 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
     useEffect(() => { if (analyse) setTimeout(() => analyseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }, [analyse]);
     useEffect(() => { if (loadingGen && generateRef.current) setTimeout(() => generateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100); }, [loadingGen]);
 
-    // ── Vérifie au montage si l'utilisateur a déjà un profil enregistré ─────
-    useEffect(() => {
-        const fetchProfil = async () => {
-            try {
-                const res = await fetch('http://localhost:8000/api/cv/profil', {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.experiences?.length > 0) {
-                        setHasProfile(true);
-                    }
-                }
-            } catch (e) { /* Ignore les erreurs réseau */ }
-        };
-        if (accessToken) fetchProfil();
-    }, [accessToken]);
+
 
     // ── Helpers ───
     const updateField       = useCallback((f, v) => setProfil(p => ({ ...p, [f]: v })), []);
@@ -437,17 +420,7 @@ export const Page_nouveau_cv = ({ accessToken, setAccessToken }) => {
                                 <span className="ncv-badge">PDF uniquement</span>
                             </div>
 
-                            {/* Bouton "Passer l'import" si l'utilisateur a déjà un profil enregistré */}
-                            {hasProfile && (
-                                <div style={{ textAlign: 'center', marginTop: 24 }}>
-                                    <p style={{ fontSize: 13, color: theme.textSecondary, margin: '0 0 12px' }}>
-                                        Vous avez déjà un profil enregistré
-                                    </p>
-                                    <button className="ncv-btn-secondary" onClick={() => setStep(3)}>
-                                        <Icon d={ICONS.skip} size={14} /> Passer l'import
-                                    </button>
-                                </div>
-                            )}
+
                         </>
                     ))}
 

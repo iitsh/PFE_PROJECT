@@ -1,11 +1,19 @@
+/**
+ * Tests unitaires pour la page profil (Page_profil.jsx).
+ * Utilise Vitest + React Testing Library avec jsdom.
+ * Couvre : chargement GET /api/auth/me, validation des champs obligatoires,
+ *          mise à jour PUT /api/auth/update-profile, affichage du toast de succès.
+ */
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { Page_profil } from '../src/Screen/Page_profil.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock global de fetch : simule les appels GET et PUT du profil utilisateur
 global.fetch = vi.fn();
 
+// Mock de useNavigate pour les éventuelles redirections (ex. session expirée)
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');

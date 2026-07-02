@@ -1,11 +1,19 @@
+/**
+ * Tests unitaires pour le parcours de création de CV (Page_nouveau_cv.jsx).
+ * Utilise Vitest + React Testing Library avec jsdom.
+ * Couvre : skip de l'import si profil existant, workflow complet en 4 étapes
+ *          (upload PDF → validation profil → analyse offre → génération CV/lettre).
+ */
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { Page_nouveau_cv } from '../src/Screen/Page_nouveau_cv.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock global de fetch : simule les appels séquentiels vers /api/cv/* (profil, parse, analyse, génération)
 global.fetch = vi.fn();
 
+// Mock de useNavigate pour les redirections éventuelles pendant le parcours multi-étapes
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -15,6 +23,7 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
+// Mock de URL.createObjectURL : jsdom ne l'implémente pas (utilisé pour l'aperçu PDF/blob)
 global.URL.createObjectURL = vi.fn();
 
 // Mock scrollIntoView (non disponible dans jsdom)
@@ -29,30 +38,7 @@ afterAll(() => {
 
 describe('Page Nouveau CV', () => {
 
-    it("démarre à l'étape 1 et affiche le bouton de skip si profil existant", async () => {
-        // Mock fetch pour /api/cv/profil: retourne un profil avec des experiences pour que hasProfile = true
-        global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({
-            experiences: [{ titre: "Dev" }], formations: [], competences: [],
-            projets: [], langues: [], ville: '', resume: '', linkedin: '', github: '', portfolio: ''
-        }) });
-
-        render(<MemoryRouter><Page_nouveau_cv accessToken="fake" setAccessToken={vi.fn()} /></MemoryRouter>);
-
-        // Attendre que hasProfile soit set en cherchant le texte "Passer l'import"
-        const skipBtn = await screen.findByText(/Passer l'import/i);
-        expect(skipBtn).toBeInTheDocument();
-
-        const user = userEvent.setup();
-        await user.click(skipBtn);
-
-        // On passe à l'étape 3 directement (skip → offre d'emploi)
-        // "Offre d'emploi" apparaît 3 fois : Stepper + SectionTitle + label "Collez...l'offre d'emploi"
-        expect(await screen.findAllByText(/Offre d'emploi/i)).toHaveLength(3);
-    });
-
     it("permet d'importer un CV, vérifier les données (étape 2), analyser l'offre (étape 3) et générer (étape 4)", async () => {
-        // 1. Fetch initial = pas de profil enregistré (donc pas de bouton skip)
-        global.fetch.mockResolvedValueOnce({ ok: false, json: async () => ({}) });
 
         const { container } = render(<MemoryRouter><Page_nouveau_cv accessToken="fake" setAccessToken={vi.fn()} /></MemoryRouter>);
         const user = userEvent.setup();

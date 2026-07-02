@@ -304,10 +304,10 @@ def login(data: LoginData, response: Response, request: Request):
             # Incrémente le compteur ou repart à 1
             new_count = 1 if nouvelle_session else last[1] + 1
 
-            # Après 3 échecs → blocage de l'IP pendant 1 minute
+            # Après 3 échecs → blocage de l'IP pendant 15 minutes
             if new_count >= 3:
-                locked_until = now_utc + timedelta(minutes=1)
-                msg, code = "Trop d'échecs. Votre IP est bloquée pendant 1 minute.", 403
+                locked_until = now_utc + timedelta(minutes=15)
+                msg, code = "Trop d'échecs. Votre IP est bloquée pendant 15 minutes.", 403
             else:
                 # Moins de 3 échecs → indique le nombre de tentatives restantes
                 locked_until = None

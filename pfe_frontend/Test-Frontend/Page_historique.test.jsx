@@ -1,11 +1,19 @@
+/**
+ * Tests unitaires pour la page historique (Page_historique.jsx).
+ * Utilise Vitest + React Testing Library avec jsdom.
+ * Couvre : spinner de chargement, liste vide, affichage des CV générés,
+ *          ouverture du modal avec aperçu HTML (CV + lettre de motivation).
+ */
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { Page_historique } from '../src/Screen/Page_historique.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock global de fetch : simule GET /api/cv/history et GET /api/cv/html/{id}
 global.fetch = vi.fn();
 
+// Mock de useNavigate (utilisé si déconnexion ou redirection depuis la page)
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');

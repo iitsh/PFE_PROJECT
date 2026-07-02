@@ -1,3 +1,9 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Point d'entrée FastAPI — backend CV Generator (PFE)
+#  Lance avec : uvicorn main:app --reload --port 8000
+#  Monte les routes /api/auth et /api/cv, CSP + CORS pour le frontend React
+# ══════════════════════════════════════════════════════════════════════════════
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware

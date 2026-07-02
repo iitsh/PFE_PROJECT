@@ -1,17 +1,26 @@
-# Python
-__pycache__/
+# ══════════════════════════════════════════════════════════════════════════════
+#  Fichiers et dossiers ignorés par Git — CV Generator (PFE)
+#  Empêche de versionner les secrets, caches et artefacts de build
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Python (backend) ─────────────────────────────────────────────────────────
+__pycache__/          # bytecode compilé (.pyc) généré à l'exécution
 *.pyc
 *.pyo
-.env
-backend/output/
+.env                  # secrets : DATABASE_URL, clés API LLM, JWT_SECRET
+backend/output/       # PDF et fichiers générés localement par le pipeline CV
 
-# Node
-pfe_frontend/node_modules/
-pfe_frontend/dist/
+# ── Node.js (frontend React/Vite) ────────────────────────────────────────────
+pfe_frontend/node_modules
+node_modules/               # dépendances npm (réinstallables via npm install)
+pfe_frontend/dist/          # build de production généré par vite build
 
-# Archives
+# ── Archives ─────────────────────────────────────────────────────────────────
 *.zip
 
-# IDE
+# ── IDE / éditeurs ───────────────────────────────────────────────────────────
 .vscode/
 .idea/
+
+# ── LaTeX (Mémoire) ──────────────────────────────────────────────────────────
+memoire/

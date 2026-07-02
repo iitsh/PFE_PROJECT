@@ -1,27 +1,30 @@
-# Minimal dependencies for CI backend tests
-# Only what's needed to import modules (IA/DB/PDF calls are mocked)
+# ══════════════════════════════════════════════════════════════════════════════
+#  Dépendances minimales pour les tests backend CI (GitLab)
+#  Seulement ce qui est nécessaire pour importer les modules — les appels
+#  IA / BDD / PDF sont mockés dans test_auth.py et test_cv.py
+# ══════════════════════════════════════════════════════════════════════════════
 
-# Web framework
+# Framework web
 fastapi==0.115.12
 uvicorn==0.34.3
 starlette==0.46.2
 
-# Database
+# Base de données (import de database.py et routes)
 psycopg2-binary==2.9.10
 
-# Authentication
+# Authentification (JWT, bcrypt, hash des refresh tokens)
 PyJWT==2.10.1
 passlib==1.7.4
 bcrypt==4.3.0
 python-multipart==0.0.20
 tzdata==2025.2
 
-# IA / LLM (needed for cv_pipeline.py import)
+# IA / LLM — requis pour l'import de cv_pipeline.py (appels mockés en test)
 google-generativeai==0.8.5
 groq==0.28.0
 openai==1.84.0
 
-# PDF
+# PDF — requis pour l'import de cv_pipeline.py (parse PDF mocké en test)
 pdfplumber==0.11.7
 
 # Template & utils
@@ -33,5 +36,5 @@ pydantic==2.11.5
 pytest==8.4.0
 httpx==0.28.1
 
-# Browser automation (needed for cv_pipeline.py import)
+# Browser automation — requis pour l'import Playwright dans cv_pipeline.py
 playwright==1.52.0

@@ -1,20 +1,28 @@
+/**
+ * Tests unitaires pour la barre de navigation (Navbar.jsx).
+ * Utilise Vitest + React Testing Library avec jsdom.
+ * Couvre : affichage conditionnel selon l'état connecté/déconnecté,
+ *          appel API de déconnexion, remise à zéro du token JWT.
+ */
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterAll, beforeAll } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import Navbar from '../src/Screen/Navbar.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock global de fetch : empêche les vrais appels HTTP pendant les tests
 global.fetch = vi.fn();
 
+// Mock de setAccessToken passé en prop par App.jsx pour mettre à jour le JWT
 let setAccessTokenMock;
 
 beforeAll(() => {})
 beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks(); // Réinitialise les compteurs d'appels entre chaque test
     setAccessTokenMock = vi.fn();
 })
 afterAll(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks(); // Restaure fetch et les autres mocks après la suite
 })
 
 describe('Navbar', () => {

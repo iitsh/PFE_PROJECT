@@ -1,3 +1,8 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Modèles Pydantic — authentification (DTO requêtes HTTP)
+#  Utilisés par routes/auth.py pour valider le JSON des requêtes register/login
+# ══════════════════════════════════════════════════════════════════════════════
+
 # BaseModel = classe de base Pydantic, valide automatiquement les types
 # des champs reçus dans le body JSON d'une requête HTTP
 from pydantic import BaseModel

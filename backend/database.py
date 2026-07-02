@@ -1,3 +1,8 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  Connexion PostgreSQL — backend CV Generator (PFE)
+#  Fournit get_db() utilisée par routes/auth.py et routes/cv.py
+# ══════════════════════════════════════════════════════════════════════════════
+
 # psycopg2 = driver Python pour PostgreSQL (envoie/reçoit les requêtes SQL)
 import psycopg2
 # load_dotenv() = lit le fichier .env et charge ses variables dans os.environ
